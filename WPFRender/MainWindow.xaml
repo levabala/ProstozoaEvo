@@ -1,0 +1,17 @@
+﻿<Window x:Class="WPFRender.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WPFRender"
+        mc:Ignorable="d"
+        WindowState="Maximized"
+        Name="MyWindow"
+        Title="MainWindow" Height="472.143" Width="947.692">
+    <Grid>
+        <Canvas Name="canvasWorld" Canvas.Background="Transparent" Margin="0,0,-0.4,0.4"/>
+        <Border BorderBrush="Black" BorderThickness="1" Margin="0,0,-0.4,0" HorizontalAlignment="Right" Width="388" Height="208" VerticalAlignment="Top">
+            <local:WorldParams x:Name="worldParams" Margin="0,0,0,0"/>
+        </Border>
+    </Grid>
+</Window>

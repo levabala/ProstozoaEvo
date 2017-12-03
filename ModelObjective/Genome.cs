@@ -1,0 +1,133 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ModelObjective
+{
+    public struct Genome
+    {        
+        public static double ALPHA_LIMIT = 1;
+
+        public Constructor constructor;
+        public Net moveNet, interactNet;
+
+        public Genome(
+            Random rnd,
+            int paramsCount, int moveInput, int moveNeurons, int moveOutput, 
+            int interactInput, int interactNeurons, int interactOutput)
+        {
+            constructor = new Constructor(rnd);            
+            moveNet = new Net(rnd, moveInput, moveOutput, moveNeurons);
+            interactNet = new Net(rnd, interactInput, interactOutput, interactNeurons);
+        }
+
+        public Genome(Random rnd, Constructor constructor)
+        {
+            this.constructor = constructor;
+            moveNet = new Net(rnd);
+            interactNet = new Net(rnd);
+        }
+
+        public Genome(Constructor constructor, Net moveNet, Net interactNet)
+        {
+            this.constructor = constructor;
+            this.moveNet = moveNet;
+            this.interactNet = interactNet;
+        }
+
+        public Genome(Random rnd, Genome g1, Genome g2, double weight1, double weight2, double mutRateConstr, double mutRateNet)
+        {            
+            double sum = weight1 + weight2;
+            double coeff1 = weight1 / sum;
+            double coeff2 = weight2 / sum;
+
+            constructor = new Constructor(rnd, g1.constructor, g2.constructor, coeff1, coeff2, mutRateConstr);
+
+            moveNet = new Net(rnd, g1.moveNet, g2.moveNet, weight1, weight2, mutRateNet);
+            interactNet = new Net(rnd, g1.interactNet, g2.interactNet, weight1, weight2, mutRateNet);            
+        }  
+        
+        public Genome(Random rnd, Genome genome, double mutRateConstr, double mutRateNet)
+        {
+            constructor = genome.constructor.clone().mutate(rnd, mutRateConstr);
+            moveNet = new Net(rnd, genome.moveNet, mutRateNet);
+            interactNet = new Net(rnd, genome.interactNet, mutRateNet);
+        }
+
+        public static double getMutation(Random rnd, double limit, double mutationRate)
+        {
+            return (rnd.NextDouble() * limit * 2 - limit) * mutationRate;
+        }
+    }   
+    
+    public struct Constructor
+    {
+        public static int COUNT = 5;
+        public double radius, color, viewDepth, viewWidth, accPower;
+
+        public Constructor(Random rnd, Constructor constr1, Constructor constr2, double coeff1, double coeff2, double mutationRate)
+        {
+            radius = mutateIt(rnd, constr1.radius * coeff1, constr2.radius * coeff2, mutationRate);
+            color = mutateIt(rnd, constr1.color * coeff1, constr2.color * coeff2, mutationRate);
+            viewDepth = mutateIt(rnd, constr1.viewDepth * coeff1, constr2.viewDepth * coeff2, mutationRate);
+            viewWidth = mutateIt(rnd, constr1.viewWidth * coeff1, constr2.viewWidth * coeff2, mutationRate);
+            accPower = mutateIt(rnd, constr1.accPower * coeff1, constr2.accPower * coeff2, mutationRate);
+        }       
+        
+        public Constructor clone()
+        {
+            return new Constructor(radius, color, viewDepth, viewWidth, accPower);
+        }
+
+        private static double mutateIt(Random rnd, double val1, double val2, double mutationRate)
+        {
+            double res = (val1 + val2) / 2 + (rnd.NextDouble() * 2 - 1) * mutationRate;
+            if (res > 1)
+                res = 1;
+            else if (res < 0)
+                res = 0;
+            return res;
+        }
+
+        private static double mutateIt(Random rnd, double val, double mutationRate)
+        {
+            double res = val + (rnd.NextDouble() * 2 - 1) * mutationRate;
+            /*if (res > 1)
+                res = 1;
+            else if (res < 0)
+                res = 0;*/
+            return res;
+        }
+
+        public Constructor(Random rnd)
+        {
+            radius = rnd.NextDouble(); ;
+            color = rnd.NextDouble();
+            viewDepth = rnd.NextDouble();
+            viewWidth = rnd.NextDouble();
+            accPower = rnd.NextDouble();
+        }
+
+        public Constructor(double radius, double color, double viewDepth, double viewWidth, double accPower)
+        {
+            this.radius = radius;
+            this.color = color;
+            this.viewDepth = viewDepth;
+            this.viewWidth = viewWidth;
+            this.accPower = accPower;
+        }
+
+        public Constructor mutate(Random rnd, double mutationRate)
+        {
+            radius = mutateIt(rnd, radius, mutationRate);
+            color = mutateIt(rnd, color, mutationRate);
+            viewDepth = mutateIt(rnd, viewDepth, mutationRate);
+            viewWidth = mutateIt(rnd, viewWidth, mutationRate);
+            accPower = mutateIt(rnd, accPower, mutationRate);
+
+            return this;
+        }
+    }
+}
