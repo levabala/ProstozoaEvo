@@ -11,8 +11,7 @@ namespace ModelObjective
         public long id;
 
         public Pnt centerP, leftP, rightP, farCenterP;
-        public double x, y, radius, accPower, color, viewDepth, viewWidth;
-        public double interactCooldown = 1;
+        public double x, y, radius, accPower, rotationPower, color, viewDepth, viewWidth;        
         public double cooldown = 0;
         public Vector moveVector, accVector;
         public Genome genome;
@@ -69,16 +68,14 @@ namespace ModelObjective
             Genome childGenome = new Genome(rnd, genome, mutateRate, mutateRate);            
 
             Prostozoa newZoa = new Prostozoa(x + rnd.Next(-(int)radius, (int)radius), y + rnd.Next(-(int)radius, (int)radius), childGenome, 0);               
-            radius -= newZoa.radius;
-
-            makeBusy();
+            radius -= newZoa.radius;            
 
             return newZoa;
         }
 
-        public void makeBusy()
+        public void makeBusy(double cooldown)
         {
-            cooldown = interactCooldown;
+            this.cooldown = cooldown;
         }
 
         public void updatePoints()
@@ -98,9 +95,9 @@ namespace ModelObjective
                 .getEnd();
         }
 
-        public void moveControl(double[] input)
+        public void moveControl(double[] input, double time)
         {
-            double moveAngle = genome.moveNet.calc(input)[0] + moveVector.alpha;
+            double moveAngle = genome.moveNet.calc(input)[0] * time * rotationPower + moveVector.alpha;            
             if (double.IsNaN(moveAngle) || double.IsInfinity(moveAngle))
                 Console.WriteLine("WTF");
             accVector = new Vector(moveAngle, accPower);
@@ -112,7 +109,8 @@ namespace ModelObjective
             color = constructor.color;
             accPower = constructor.accPower;
             viewDepth = constructor.viewDepth;
-            viewWidth = constructor.viewWidth;            
+            viewWidth = constructor.viewWidth;
+            rotationPower = constructor.rotationPower;
             viewAngle = 2 * Math.Atan(viewWidth / viewDepth);            
         }
 

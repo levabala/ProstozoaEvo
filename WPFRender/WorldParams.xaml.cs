@@ -30,6 +30,6 @@ namespace WPFRender
         public WorldParams()
         {            
             InitializeComponent();            
-        }
+        }        
     }
 }

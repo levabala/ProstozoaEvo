@@ -24,6 +24,7 @@ namespace WPFRender
         World world;
         WorldController worldController;
         WorldElement worldElem;
+        WorldAdjuster worldAdjuster;
         Random rnd = new Random();
 
         public MainWindow()
@@ -36,11 +37,18 @@ namespace WPFRender
         public void init()
         {
             world = new World();
+            world.FoodTick(10);
             worldController = new WorldController(world);
+            worldElem = new WorldElement(canvasWorld);
+            /*worldAdjuster = new WorldAdjuster(world);
+            worldAdjuster.OnRefresh += () =>
+            {
+                worldParams.world = null;
+                worldParams.world = world;
+            };*/
 
             worldParams.world = world;
-
-            worldElem = new WorldElement(canvasWorld);
+            
             canvasWorld.Children.Add(worldElem);
             worldElem.setWorld(world);
             

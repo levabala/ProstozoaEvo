@@ -10,9 +10,9 @@ namespace ModelObjective
 {
     public class WorldController
     {
-        public static double DEFAULT_MOVE_TIMER_INTERVAL = 5;        
-        public static double DEFAULT_CONTROL_TIMER_INTERVAL = 500;
-        public static double DEFAULT_FOOD_TIMER_INTERVAL = 50;        
+        public static double DEFAULT_MOVE_TIMER_INTERVAL = 8;        
+        public static double DEFAULT_CONTROL_TIMER_INTERVAL = 5;
+        public static double DEFAULT_FOOD_TIMER_INTERVAL = 16;        
 
         World world;
         Stopwatch moveWatch = new Stopwatch();
@@ -64,6 +64,8 @@ namespace ModelObjective
                 moveWatch.Stop();
                 double time = (double)moveWatch.Elapsed.Milliseconds / 1000;
 
+                time = world.multiplyTimeDueToSimSpeed(time);
+
                 lock (locker)
                     world.MoveTick(time);
 
@@ -76,6 +78,8 @@ namespace ModelObjective
                 moveWatch.Stop();
                 double time = (double)moveWatch.Elapsed.Milliseconds / 1000;
 
+                time = world.multiplyTimeDueToSimSpeed(time);
+
                 lock (locker)
                     world.ControlTick(time);
 
@@ -87,6 +91,8 @@ namespace ModelObjective
                 foodWatch.Stop();
                 double time = (double)foodWatch.Elapsed.Milliseconds / 1000;
 
+                time = world.multiplyTimeDueToSimSpeed(time);
+
                 lock (locker2)
                     world.FoodTick(time);
 
@@ -97,8 +103,11 @@ namespace ModelObjective
         public void Resume()
         {
             moveTimer.Start();
-            controlTimer.Start();
+            //controlTimer.Start();
             foodTimer.Start();
+
+            moveWatch.Start();
+            foodWatch.Start();
         }
 
         public void Pause()
@@ -112,20 +121,8 @@ namespace ModelObjective
         }
 
         public void addRandomZoaInArea(Random rnd, int left, int top, int right, int bottom)
-        {            
-            double x = rnd.Next(left, right);
-            double y = rnd.Next(top, bottom);
-            double radius = rnd.Next(5, 10);
-            double accPower = rnd.Next(50, 100);
-            double color = rnd.Next(0, 255);
-            double viewDepth = rnd.Next(15, 25);
-            double viewWidth = rnd.Next(10, 20);
-            double moveAngle = (double)rnd.Next(-314, 314) / 100;
-            double moveLength = rnd.Next(3, 8);
-            Vector moveVector = new Vector(moveAngle, moveLength);
-            Prostozoa zoa = new Prostozoa(rnd, x, y, new Constructor(radius, color, viewDepth, viewWidth, accPower));
-            zoa.moveVector = moveVector;        
-
+        {
+            Prostozoa zoa = World.generateRandomZoa(rnd, left, top, right, bottom);            
             world.addZoa(zoa);
         }
     }

@@ -48,6 +48,7 @@
     <Compile Include="Pnt.cs" />
     <Compile Include="Vector.cs" />
     <Compile Include="World.cs" />
+    <Compile Include="WorldAdjuster.cs" />
     <Compile Include="WorldController.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

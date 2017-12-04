@@ -65,7 +65,7 @@ namespace ModelObjective
     public struct Constructor
     {
         public static int COUNT = 5;
-        public double radius, color, viewDepth, viewWidth, accPower;
+        public double radius, color, viewDepth, viewWidth, accPower, rotationPower;
 
         public Constructor(Random rnd, Constructor constr1, Constructor constr2, double coeff1, double coeff2, double mutationRate)
         {
@@ -74,11 +74,32 @@ namespace ModelObjective
             viewDepth = mutateIt(rnd, constr1.viewDepth * coeff1, constr2.viewDepth * coeff2, mutationRate);
             viewWidth = mutateIt(rnd, constr1.viewWidth * coeff1, constr2.viewWidth * coeff2, mutationRate);
             accPower = mutateIt(rnd, constr1.accPower * coeff1, constr2.accPower * coeff2, mutationRate);
-        }       
-        
+            rotationPower = mutateIt(rnd, constr1.rotationPower * coeff1, constr2.rotationPower * coeff2, mutationRate);
+        }
+
+        public Constructor(Random rnd)
+        {
+            radius = rnd.NextDouble(); ;
+            color = rnd.NextDouble();
+            viewDepth = rnd.NextDouble();
+            viewWidth = rnd.NextDouble();
+            accPower = rnd.NextDouble();
+            rotationPower = rnd.NextDouble();
+        }
+
+        public Constructor(double radius, double color, double viewDepth, double viewWidth, double accPower, double rotationPower)
+        {
+            this.radius = radius;
+            this.color = color;
+            this.viewDepth = viewDepth;
+            this.viewWidth = viewWidth;
+            this.accPower = accPower;
+            this.rotationPower = rotationPower;
+        }
+
         public Constructor clone()
         {
-            return new Constructor(radius, color, viewDepth, viewWidth, accPower);
+            return new Constructor(radius, color, viewDepth, viewWidth, accPower, rotationPower);
         }
 
         private static double mutateIt(Random rnd, double val1, double val2, double mutationRate)
@@ -99,25 +120,7 @@ namespace ModelObjective
             else if (res < 0)
                 res = 0;*/
             return res;
-        }
-
-        public Constructor(Random rnd)
-        {
-            radius = rnd.NextDouble(); ;
-            color = rnd.NextDouble();
-            viewDepth = rnd.NextDouble();
-            viewWidth = rnd.NextDouble();
-            accPower = rnd.NextDouble();
-        }
-
-        public Constructor(double radius, double color, double viewDepth, double viewWidth, double accPower)
-        {
-            this.radius = radius;
-            this.color = color;
-            this.viewDepth = viewDepth;
-            this.viewWidth = viewWidth;
-            this.accPower = accPower;
-        }
+        }        
 
         public Constructor mutate(Random rnd, double mutationRate)
         {
@@ -126,6 +129,7 @@ namespace ModelObjective
             viewDepth = mutateIt(rnd, viewDepth, mutationRate);
             viewWidth = mutateIt(rnd, viewWidth, mutationRate);
             accPower = mutateIt(rnd, accPower, mutationRate);
+            rotationPower = mutateIt(rnd, rotationPower, mutationRate);
 
             return this;
         }

@@ -10,8 +10,8 @@
         Title="MainWindow" Height="472.143" Width="947.692">
     <Grid>
         <Canvas Name="canvasWorld" Canvas.Background="Transparent" Margin="0,0,-0.4,0.4"/>
-        <Border BorderBrush="Black" BorderThickness="1" Margin="0,0,-0.4,0" HorizontalAlignment="Right" Width="388" Height="208" VerticalAlignment="Top">
-            <local:WorldParams x:Name="worldParams" Margin="0,0,0,0"/>
+        <Border BorderBrush="Black" BorderThickness="1" Margin="0,0,-0.4,0" HorizontalAlignment="Right" Width="388" Height="368" VerticalAlignment="Top">
+            <local:WorldParams x:Name="worldParams" Margin="0,0,0,0" Width="Auto"/>
         </Border>
     </Grid>
 </Window>

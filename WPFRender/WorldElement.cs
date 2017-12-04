@@ -56,7 +56,7 @@ namespace WPFRender
             matrix = new Matrix();            
 
             updateTimer = new Timer(updateTimer.Interval);
-            updateTimer.Interval = 5;            
+            updateTimer.Interval = 16;            
             updateTimer.Elapsed += (a, b) => update();
             updateTimer.Start();            
         }
@@ -93,11 +93,22 @@ namespace WPFRender
 
                 InvalidateVisual();
             }
+            pressedMouse = mouse;
         }
 
         protected override void OnRender(DrawingContext drawingContext)
         {
             base.OnRender(drawingContext);
+
+            //draw life zone
+            SolidColorBrush zoneBrush = new SolidColorBrush(Colors.DarkGreen)
+            {
+                Opacity = 0.01
+            };
+            Point leftTop = matrix.Transform(new Point(world.leftLifeBorder, world.topLifeBorder));
+            Point rightBottom = matrix.Transform(new Point(world.rightLifeBorder, world.bottomLifeBorder));
+            Rect rect = new Rect(leftTop, rightBottom);
+            drawingContext.DrawRectangle(zoneBrush, new Pen(new SolidColorBrush(Colors.Black) { Opacity = 0.3 }, 10), rect);
 
             //draw food
             List<Pnt> food;
