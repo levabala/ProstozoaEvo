@@ -37,7 +37,7 @@ namespace WPFRender
         public void init()
         {
             world = new World();
-            world.FoodTick(10);
+            world.FoodTick(2);
             worldController = new WorldController(world);
             worldElem = new WorldElement(canvasWorld);
             /*worldAdjuster = new WorldAdjuster(world);
@@ -52,7 +52,7 @@ namespace WPFRender
             canvasWorld.Children.Add(worldElem);
             worldElem.setWorld(world);
             
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 0; i++)
                 worldController.addRandomZoaInArea(rnd, 0, 0, (int)world.rightLifeBorder, (int)world.bottomLifeBorder);
 
             worldController.Resume();

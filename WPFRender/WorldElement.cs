@@ -156,7 +156,7 @@ namespace WPFRender
                         Opacity = 0
                     };
                     viewBrush.Freeze();
-                    Brush circleBrush = new SolidColorBrush(Colors.Red)
+                    Brush circleBrush = new SolidColorBrush(new ZoaHSL(zoa.color).toColor())
                     {
                         Opacity = zoa.radius / viewedSize
                     };

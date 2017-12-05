@@ -49,17 +49,19 @@ namespace ModelObjective
         public int MaxFoodCount { get { return maxFoodCount; } set { maxFoodCount = value; } }
         public double NoizeWeight { get { return noizeWeight; } set { noizeWeight = value; } }
         public int StablePopulationSize { get { return stablePopulationSize; } set { stablePopulationSize = value; } }
-        public double LifeZoneWidth { get { return rightLifeBorder; } set { rightLifeBorder = value; } }
-        public double LifeZoneHeight { get { return bottomLifeBorder; } set { bottomLifeBorder = value; } }
+        public double LifeZoneWidth { get { return rightLifeBorder; } set { rightLifeBorder = value; area = (rightLifeBorder - leftLifeBorder) * (bottomLifeBorder - topLifeBorder); } }
+        public double LifeZoneHeight { get { return bottomLifeBorder; } set { bottomLifeBorder = value; area = (rightLifeBorder - leftLifeBorder) * (bottomLifeBorder - topLifeBorder); } }
 
         public double leftLifeBorder = 0;
-        public double rightLifeBorder = 800;
-        public double bottomLifeBorder = 500;
+        public double rightLifeBorder = 1000;
+        public double bottomLifeBorder = 700;
         public double topLifeBorder = 0;
         public double area = 1;
 
+        public double worldTickTime = 0.001;
         public double moveTickTime = 0.001; //in seconds
-        public double controlTickTime = 0.001;        
+        public double controlTickTime = 0.001;
+        public double foodTickTime = 0.001;
 
         public World()
         {
@@ -79,6 +81,24 @@ namespace ModelObjective
         public double multiplyTimeDueToSimSpeed(double time)
         {
             return time *= simSpeed;
+        }
+
+        public void WorldTick(double time)
+        {
+            if (time == 0)
+                return;
+
+            while(time > worldTickTime)
+            {                
+                FoodTick(time);
+                ControlTick(time);
+                calcMoving(time);
+
+                time -= worldTickTime;
+            }
+
+            FoodTick(time);            
+            calcMoving(time);
         }
 
         public void MoveTick(double time)
@@ -135,7 +155,8 @@ namespace ModelObjective
                 }
                 foreach (Prostozoa zoa in toKill)
                     prostozoas.Remove(zoa);
-                for (int i = 0; i < stablePopulationSize - prostozoas.Count; i++)
+
+                if (stablePopulationSize > prostozoas.Count)
                     addZoa(generateRandomZoa(rnd, leftLifeBorder, topLifeBorder, rightLifeBorder, bottomLifeBorder));
             }
         }
