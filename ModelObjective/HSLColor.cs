@@ -13,7 +13,7 @@ namespace ModelObjective
         private double saturation = 1.0;
         private double luminosity = 1.0;
 
-        private const double scale = 255.0;
+        private readonly double scale = 1;
 
         public double Hue
         {
@@ -130,10 +130,14 @@ namespace ModelObjective
             SetRGB(red, green, blue);
         }
         public HSLColor(double hue, double saturation, double luminosity)
-        {
+        {            
             this.Hue = hue;
             this.Saturation = saturation;
             this.Luminosity = luminosity;
+
+            double h = this.hue;
+            double s = this.saturation;
+            double l = this.luminosity;
         }
 
     }

@@ -11,7 +11,7 @@ namespace ModelObjective
         public long id;
 
         public Pnt centerP, leftP, rightP, farCenterP;
-        public double x, y, radius, accPower, rotationPower, color, viewDepth, viewWidth;        
+        public double x, y, radius, accPower, rotationPower, color, viewDepth, viewWidth;                
         public double cooldown = 0;
         public Vector moveVector, accVector;
         public Genome genome;
@@ -60,15 +60,36 @@ namespace ModelObjective
         public Prostozoa gemmate(Random rnd)
         {
             double mutateRate = 0.1;
-            if (radius < genome.constructor.radius * (1 + mutateRate) * 2)
+            if (radius < genome.constructor.radius * (1 + mutateRate) * 3)
                 return null;
 
             moveVector.setLength(0);
 
-            Genome childGenome = new Genome(rnd, genome, mutateRate, mutateRate);            
+            Genome childGenome = new Genome(rnd, genome, mutateRate, mutateRate);
 
-            Prostozoa newZoa = new Prostozoa(x + rnd.Next(-(int)radius, (int)radius), y + rnd.Next(-(int)radius, (int)radius), childGenome, 0);               
+            double dx = rnd.Next(-(int)radius, (int)radius) + radius * Math.Sign(rnd.Next(-1, 0));
+            double dy = rnd.Next(-(int)radius, (int)radius) + radius * Math.Sign(rnd.Next(-1, 0));
+            Prostozoa newZoa = new Prostozoa(x + dx, y + dy , childGenome, 0);               
             radius -= newZoa.radius;            
+
+            return newZoa;
+        }
+
+        public Prostozoa love(Random rnd, Prostozoa zz)
+        {
+            double mutateRate = 0.1;
+
+            Genome childGenome = new Genome(rnd, genome, zz.genome, radius, zz.radius, mutateRate, mutateRate);
+            if (radius < childGenome.constructor.radius / 2 || zz.radius < childGenome.constructor.radius / 2)
+                return null;
+
+            moveVector.setLength(0);
+
+            double dx = rnd.Next(-(int)radius, (int)radius) + radius * Math.Sign(rnd.Next(-1, 0));
+            double dy = rnd.Next(-(int)radius, (int)radius) + radius * Math.Sign(rnd.Next(-1, 0));
+            Prostozoa newZoa = new Prostozoa(x + dx, y + dy, childGenome, 0);
+            radius -= newZoa.radius / 2;
+            zz.radius -= newZoa.radius / 2;
 
             return newZoa;
         }
@@ -95,16 +116,39 @@ namespace ModelObjective
                 .getEnd();
         }
 
+        public double[] interactControl(double[] input)
+        {
+            return genome.interactNet.calc(input);
+        }
+
         public void moveControl(double[] input, double time)
         {
-            double moveAngle = genome.moveNet.calc(input)[0] * time * rotationPower + moveVector.alpha;            
+            double[] res = genome.moveNet.calc(input);
+            double moveAngle = res[0] * time * rotationPower + moveVector.alpha;
+            double acc = res[1] * accPower;
             if (double.IsNaN(moveAngle) || double.IsInfinity(moveAngle))
+            {
                 Console.WriteLine("WTF");
-            accVector = new Vector(moveAngle, accPower);
+                return;
+            }
+            if (double.IsNaN(acc) || double.IsInfinity(acc))
+            {
+                Console.WriteLine("WTF");
+                return;
+            }
+            if (Math.Abs(acc) < 0.1)
+                Console.WriteLine("asd");
+            acc = Math.Abs(acc);
+            accVector = new Vector(moveAngle, accPower);// cc);
         }
 
         private void applyConstructor(Constructor constructor)
         {
+            if (constructor.color > 5)
+                constructor.color = 5;
+            else if (constructor.color < 0)
+                constructor.color = 0;
+
             radius = constructor.radius;
             color = constructor.color;
             accPower = constructor.accPower;

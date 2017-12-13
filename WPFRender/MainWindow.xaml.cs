@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -40,12 +41,7 @@ namespace WPFRender
             world.FoodTick(2);
             worldController = new WorldController(world);
             worldElem = new WorldElement(canvasWorld);
-            /*worldAdjuster = new WorldAdjuster(world);
-            worldAdjuster.OnRefresh += () =>
-            {
-                worldParams.world = null;
-                worldParams.world = world;
-            };*/
+            
 
             worldParams.world = world;
             
@@ -53,7 +49,7 @@ namespace WPFRender
             worldElem.setWorld(world);
             
             for (int i = 0; i < 0; i++)
-                worldController.addRandomZoaInArea(rnd, 0, 0, (int)world.rightLifeBorder, (int)world.bottomLifeBorder);
+                worldController.addRandomZoaInArea(rnd, 0, 0, (int)world.rightLifeBorder, (int)world.bottomLifeBorder);            
 
             worldController.Resume();
 

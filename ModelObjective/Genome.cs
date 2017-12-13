@@ -7,7 +7,13 @@ using System.Threading.Tasks;
 namespace ModelObjective
 {
     public struct Genome
-    {        
+    {
+        public static int moveIn = 8;
+        public static int moveNeur = 4;
+        public static int moveOut = 2;
+        public static int intreractIn = 2;
+        public static int intreractNeur = 2;
+        public static int intreractOut = 2;
         public static double ALPHA_LIMIT = 1;
 
         public Constructor constructor;
@@ -26,8 +32,8 @@ namespace ModelObjective
         public Genome(Random rnd, Constructor constructor)
         {
             this.constructor = constructor;
-            moveNet = new Net(rnd);
-            interactNet = new Net(rnd);
+            moveNet = new Net(rnd, moveIn, moveOut, moveNeur);
+            interactNet = new Net(rnd, intreractIn, intreractOut, intreractNeur);
         }
 
         public Genome(Constructor constructor, Net moveNet, Net interactNet)
@@ -56,9 +62,9 @@ namespace ModelObjective
             interactNet = new Net(rnd, genome.interactNet, mutRateNet);
         }
 
-        public static double getMutation(Random rnd, double limit, double mutationRate)
+        public static double getMutation(Random rnd, double mutationRate)
         {
-            return (rnd.NextDouble() * limit * 2 - limit) * mutationRate;
+            return rnd.NextDouble() * mutationRate * 2 - mutationRate;
         }
     }   
     
@@ -69,12 +75,12 @@ namespace ModelObjective
 
         public Constructor(Random rnd, Constructor constr1, Constructor constr2, double coeff1, double coeff2, double mutationRate)
         {
-            radius = mutateIt(rnd, constr1.radius * coeff1, constr2.radius * coeff2, mutationRate);
-            color = mutateIt(rnd, constr1.color * coeff1, constr2.color * coeff2, mutationRate);
-            viewDepth = mutateIt(rnd, constr1.viewDepth * coeff1, constr2.viewDepth * coeff2, mutationRate);
-            viewWidth = mutateIt(rnd, constr1.viewWidth * coeff1, constr2.viewWidth * coeff2, mutationRate);
-            accPower = mutateIt(rnd, constr1.accPower * coeff1, constr2.accPower * coeff2, mutationRate);
-            rotationPower = mutateIt(rnd, constr1.rotationPower * coeff1, constr2.rotationPower * coeff2, mutationRate);
+            radius = mutateIt(rnd, constr1.radius * coeff1 + constr2.radius * coeff2, mutationRate);
+            color = mutateIt(rnd, constr1.color * coeff1 + constr2.color * coeff2, mutationRate);
+            viewDepth = mutateIt(rnd, constr1.viewDepth * coeff1 + constr2.viewDepth * coeff2, mutationRate);
+            viewWidth = mutateIt(rnd, constr1.viewWidth * coeff1 + constr2.viewWidth * coeff2, mutationRate);
+            accPower = mutateIt(rnd, constr1.accPower * coeff1 + constr2.accPower * coeff2, mutationRate);
+            rotationPower = mutateIt(rnd, constr1.rotationPower * coeff1 + constr2.rotationPower * coeff2, mutationRate);
         }
 
         public Constructor(Random rnd)
@@ -105,10 +111,10 @@ namespace ModelObjective
         private static double mutateIt(Random rnd, double val1, double val2, double mutationRate)
         {
             double res = (val1 + val2) / 2 + (rnd.NextDouble() * 2 - 1) * mutationRate;
-            if (res > 1)
+            /*if (res > 1)
                 res = 1;
             else if (res < 0)
-                res = 0;
+                res = 0;*/
             return res;
         }
 

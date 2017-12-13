@@ -8,8 +8,8 @@
              Name="WindowWP" Height="369.333" Width="300.534">
     <Grid>
         <Label Content="Speed rate:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-        <Slider Margin="103,16,58,0" x:Name="sliderSpeedRate" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.1" Maximum="30.0" Value="{Binding world.SimSpeed, ElementName=WindowWP}"/>
-        <Label Margin="0,12,5,0" Content="{Binding Path=Value, ElementName=sliderSpeedRate}" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
+        <Slider Margin="103,16,58,0" x:Name="sliderSpeedRate" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.5" Maximum="10.0"/>
+        <Label x:Name="labelSpeedRate"  Margin="0,12,5,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
 
         <Label Content="Toxicity:" HorizontalAlignment="Left" Margin="10,39,0,0" VerticalAlignment="Top"/>
         <Slider Margin="103,45,58,0" x:Name="sliderToxicity" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.01" Maximum="10" Value="{Binding world.Toxicity, ElementName=WindowWP}"/>
@@ -20,15 +20,15 @@
         <Label Margin="0,70,5,0" Content="{Binding Path=Value, ElementName=sliderViscosity}" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
 
         <Label Content="Fertility:" HorizontalAlignment="Left" Margin="10,97,0,0" VerticalAlignment="Top"/>
-        <Slider Margin="103,103,58,0" x:Name="sliderFertility" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.00005" Maximum="0.005" Value="{Binding world.Fertility, ElementName=WindowWP}"/>
+        <Slider Margin="103,103,58,0" x:Name="sliderFertility" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.000001" Maximum="0.0005" Value="{Binding world.Fertility, ElementName=WindowWP}"/>
         <Label Margin="0,99,5,0" Content="{Binding Path=Value, ElementName=sliderFertility}" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
 
         <Label Content="Aggressiveness:" HorizontalAlignment="Left" Margin="10,126,0,0" VerticalAlignment="Top"/>
-        <Slider Margin="103,132,58,0" x:Name="sliderAggressiveness" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.005" Maximum="0.5" Value="{Binding world.Aggressiveness, ElementName=WindowWP}"/>
+        <Slider Margin="103,132,58,0" x:Name="sliderAggressiveness" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.01" Maximum="0.1" Value="{Binding world.Aggressiveness, ElementName=WindowWP}"/>
         <Label Margin="0,128,5,0" Content="{Binding Path=Value, ElementName=sliderAggressiveness}" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
 
         <Label Content="FoodWeight:" HorizontalAlignment="Left" Margin="10,155,0,0" VerticalAlignment="Top"/>
-        <Slider Margin="103,161,58,0" x:Name="sliderFoodWeight" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.1" Maximum="10" Value="{Binding world.FoodWeight, ElementName=WindowWP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        <Slider Margin="103,161,58,0" x:Name="sliderFoodWeight" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.1" Maximum="50" Value="{Binding world.FoodWeight, ElementName=WindowWP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         <Label Margin="0,157,5,0" Content="{Binding Path=Value, ElementName=sliderFoodWeight}" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
 
         <Label Content="MaxMoveSpeed:" HorizontalAlignment="Left" Margin="10,184,0,0" VerticalAlignment="Top"/>
@@ -48,11 +48,11 @@
         <Label Margin="0,273,5,0" Content="{Binding Value, ElementName=sliderStablePopulationSize}" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
         
         <Label Content="LifeZoneWidth:" HorizontalAlignment="Left" Margin="10,300,0,0" VerticalAlignment="Top"/>
-        <Slider Margin="103,306,57.8,0" x:Name="sliderLifeZoneWidth" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0" Maximum="2000" Value="{Binding world.LifeZoneWidth, ElementName=WindowWP}"/>
+        <Slider Margin="103,306,57.8,0" x:Name="sliderLifeZoneWidth" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0" Maximum="6000" Value="{Binding world.LifeZoneWidth, ElementName=WindowWP}"/>
         <Label Margin="0,302,4.8,0" Content="{Binding Value, ElementName=sliderLifeZoneWidth}" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
 
         <Label Content="LifeZoneHeight:" HorizontalAlignment="Left" Margin="10,329,0,0" VerticalAlignment="Top"/>
-        <Slider Margin="103,335,57.8,0" x:Name="sliderLifeZoneHeight" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0" Maximum="2000" Value="{Binding world.LifeZoneHeight, ElementName=WindowWP}"/>
+        <Slider Margin="103,335,57.8,0" x:Name="sliderLifeZoneHeight" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0" Maximum="6000" Value="{Binding world.LifeZoneHeight, ElementName=WindowWP}"/>
         <Label Margin="0,331,4.8,0" Content="{Binding Value, ElementName=sliderLifeZoneHeight}" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
     </Grid>
 </UserControl>

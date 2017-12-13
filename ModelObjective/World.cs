@@ -22,20 +22,22 @@ namespace ModelObjective
         long increment = 0;
         Random rnd = new Random();
 
-        public double maxMoveSpeed = 500;
-        public int maxFoodCount = 3000;
+        public double maxMoveSpeed = 50; //pixels/second
+        public int maxFoodCount = 300;
         public double simSpeed = 1;
-        public double aggressiveness = 0.05; // -radius/second (for radius^2)
+        public double aggressiveness = 0.1; // -radius/second (for radius^2)
         public double toxicity = 0.1; // intoxicication/second
         public double viscosity = 1.0001;// breaking/second
-        public double fertility = 0.001;// food_spawned*km^2/second
-        public double foodWeight = 3;
+        public double fertility = 0.0005;// food_spawned*km^2/second
+        public double foodWeight = 15;
         public double minLifeRadius = 1;
         public double noizeWeight = 0.3;
-        public double interactCooldown = 0.3;
+        public double interactCooldown = 0.2;
+        public double eatCooldown = 0.2;
         public double agressivenessRadiusWeight = 2;//1.02;
-        public double optimalRadius = 6;
-        public int stablePopulationSize = 5;
+        public double optimalRadius = 10;
+        public int stablePopulationSize = 8;
+        public bool gemmating = false;
 
         public double SimSpeed { get { return simSpeed; } set { simSpeed = value; } }
         public double Aggressiveness { get { return aggressiveness; } set { aggressiveness = value; } }
@@ -53,19 +55,28 @@ namespace ModelObjective
         public double LifeZoneHeight { get { return bottomLifeBorder; } set { bottomLifeBorder = value; area = (rightLifeBorder - leftLifeBorder) * (bottomLifeBorder - topLifeBorder); } }
 
         public double leftLifeBorder = 0;
-        public double rightLifeBorder = 1000;
-        public double bottomLifeBorder = 700;
+        public double rightLifeBorder = 800;
+        public double bottomLifeBorder = 500;
         public double topLifeBorder = 0;
         public double area = 1;
 
-        public double worldTickTime = 0.001;
-        public double moveTickTime = 0.001; //in seconds
-        public double controlTickTime = 0.001;
+        public double worldTickTime = 0.05;
+        public double moveTickTime = 0.05; //in seconds
+        public double controlTickTime = 0.05;
         public double foodTickTime = 0.001;
 
         public World()
         {
             area = (rightLifeBorder - leftLifeBorder) * (bottomLifeBorder - topLifeBorder);
+
+            Timer spawnTime = new Timer(1000);
+            spawnTime.Elapsed += SpawnTime_Elapsed; ;
+            //spawnTime.Start();
+        }
+
+        private void SpawnTime_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            addZoa(generateRandomZoa(rnd, leftLifeBorder, topLifeBorder, rightLifeBorder, bottomLifeBorder));
         }
 
         public void addZoa(Prostozoa zoa)
@@ -91,7 +102,7 @@ namespace ModelObjective
             while(time > worldTickTime)
             {                
                 FoodTick(time);
-                ControlTick(time);
+                //ControlTick(time);
                 calcMoving(time);
 
                 time -= worldTickTime;
@@ -115,6 +126,24 @@ namespace ModelObjective
             calcMoving(time);
         }
 
+        private double aggressivenessFun(double radius)
+        {
+            //https://www.desmos.com/calculator/flcikir4kw
+            /*double b = 18;
+            double a = 0.996;
+            double c = 18.2;
+            double o = optimalRadius;
+
+            double res = b * (-Math.Pow(a, Math.Pow(radius - optimalRadius, 2))) + c;
+            return res;*/
+
+            double o = optimalRadius;
+            double k = 0.01;
+
+            double res = k * Math.Pow((radius - o), 2) + 1;
+            return res;
+        }
+
         double notContolledTime = 0;
         private void calcMoving(double time)
         {
@@ -126,33 +155,35 @@ namespace ModelObjective
             lock (prostozoas)
             {
                 List<Prostozoa> toKill = new List<Prostozoa>();
-                foreach (Prostozoa zoa in prostozoas)
+                Parallel.ForEach(prostozoas, (zoa) =>
                 {
                     //apply aggressiveness
-                    double coeff = aggressivenessFun(zoa.radius, agressivenessRadiusWeight, optimalRadius);
-                    zoa.radius -= 
-                        aggressiveness * 
-                        coeff * 
+                    double coeff = aggressivenessFun(zoa.radius);//, agressivenessRadiusWeight, optimalRadius);
+                    zoa.radius -=
+                        aggressiveness *
+                        coeff *
                         time;
 
                     //kill to little zoas
                     if (zoa.radius < minLifeRadius)
-                        toKill.Add(zoa);
+                        lock(toKill)
+                            toKill.Add(zoa);
 
                     //update coordinates
                     zoa.moveVector.setStart(zoa.x, zoa.y);
-                    zoa.moveVector.add(zoa.accVector);
+                    zoa.moveVector.add(zoa.accVector.clone().multiply(time));
                     //zoa.moveVector.multiply(1 / (viscosity * time));
                     zoa.moveVector.multiply(time);
-                    if (zoa.moveVector.length > maxMoveSpeed)
-                        zoa.moveVector.setLength(maxMoveSpeed);
+                    zoa.moveVector.multiply(1 / zoa.radius);
+                    if (zoa.moveVector.length > maxMoveSpeed * time)
+                        zoa.moveVector.setLength(maxMoveSpeed * time);
 
                     zoa.moveVector.next();
-                    zoa.x += zoa.moveVector.dx * time;
-                    zoa.y += zoa.moveVector.dy * time;
+                    zoa.x += zoa.moveVector.dx;
+                    zoa.y += zoa.moveVector.dy;
 
                     zoa.updatePoints();
-                }
+                });
                 foreach (Prostozoa zoa in toKill)
                     prostozoas.Remove(zoa);
 
@@ -195,12 +226,13 @@ namespace ModelObjective
             lock (prostozoas)
             {
                 List<Prostozoa> newZoas = new List<Prostozoa>();
+                //Parallel.ForEach(prostozoas, (zoa) =>
                 foreach (Prostozoa zoa in prostozoas)
                 {
                     //check cooldown
                     zoa.cooldown -= time;
                     if (zoa.cooldown > 0)
-                        continue;
+                        return;
 
                     //eat under-body food
                     lock (food)
@@ -212,7 +244,7 @@ namespace ModelObjective
                             {
                                 food.Remove(f);
                                 zoa.radius += foodWeight;
-                                zoa.makeBusy(interactCooldown);
+                                zoa.makeBusy(eatCooldown);
                                 break;
                             }
                         }
@@ -222,26 +254,106 @@ namespace ModelObjective
                     double foodLeft = 0, foodRight = 0;
                     lock (food)
                         foreach (Pnt f in food)
+                        {
+                            double dist = new Vector(zoa.centerP, f).length;
+                            if (dist > zoa.viewDepth * zoa.radius)
+                                continue;
                             if (pointInTriangle(f, zoa.leftP, zoa.farCenterP, zoa.centerP))
-                                foodLeft += 1 / new Vector(zoa.centerP, f).length;
+                                foodLeft += 1 / dist;
                             else
                             if (pointInTriangle(f, zoa.rightP, zoa.farCenterP, zoa.centerP))
-                                foodLeft += 1 / new Vector(zoa.centerP, f).length;
+                                foodLeft += 1 / dist;
+                        }
+                    double zoasLeft = 0, zoasRight = 0, colorLeft = 0, colorRight = 0;
+                    foreach (Prostozoa z in prostozoas)
+                        if (z.id != zoa.id)
+                            if (pointInTriangle(z.centerP, zoa.leftP, zoa.farCenterP, zoa.centerP))
+                            {
+                                double dist = new Vector(zoa.centerP, z.centerP).length;
+                                double coeff = 1 / dist;
+                                if (dist == 0)
+                                    coeff = 0;
+                                zoasLeft += coeff * z.radius;
+                                colorLeft = (colorLeft + coeff * ((zoa.color - z.color) / ZoaHSL.scale) * z.radius) / 2;
+                            }
+                            else
+                            if (pointInTriangle(z.centerP, zoa.rightP, zoa.farCenterP, zoa.centerP))
+                            {
+                                double dist = new Vector(zoa.centerP, z.centerP).length;
+                                double coeff = 1 / dist;
+                                if (dist == 0)
+                                    coeff = 0;
+                                zoasRight += coeff * z.radius;
+                                colorRight = (colorRight + coeff * ((zoa.color - z.color) / ZoaHSL.scale) * z.radius) / 2;
+                            }
+
                     double sum = foodLeft + foodRight;
+                    double sum2 = zoasLeft + zoasRight;
                     double noFood = 0;
                     if (sum == 0)
                     {
                         sum = noFood = 1;
                     }
+                    if (sum2 == 0)
+                        sum2 = 1;
+
                     double noize = (rnd.NextDouble() * 2 - 1) * noizeWeight;
-                    zoa.moveControl(new double[] { foodLeft / sum, foodRight / sum, noFood, noize }, time);
+
+                    zoa.moveControl(new double[] {
+                        foodLeft / sum,
+                        foodRight / sum,
+                        noFood,
+                        noize,
+                        zoasLeft / sum2,
+                        zoasRight / sum2,
+                        colorLeft,
+                        colorRight
+                    }, time);
+
+                    //now collision between zoas                                   
+                    foreach (Prostozoa zz in prostozoas)
+                        if (zz.radius != 0 && zoa.radius > zz.radius && zz.id != zoa.id)
+                        {
+                            double dist = new Vector(zoa.centerP, zz.centerP).length;
+                            if (dist < zz.radius + zoa.radius)
+                            {
+                                double[] input = new double[] { Math.Abs(zoa.color - zz.color) / ZoaHSL.scale, optimalRadius / zoa.radius - 1 };
+                                double[] res = zoa.interactControl(input);
+                                double toEat = res[0];
+                                double toLove = res[1];
+
+                                if (toLove <= 0 && toEat <= 0)
+                                    continue;
+
+                                if (toLove > toEat)
+                                {
+                                    Prostozoa child = zoa.love(rnd, zz);
+                                    if (child != null)
+                                    {
+                                        newZoas.Add(child);
+                                        zoa.makeBusy(interactCooldown);
+                                    }
+                                }
+                                else
+                                {
+                                    zoa.radius += zz.radius;
+                                    zz.radius = 0;
+                                    zoa.makeBusy(eatCooldown);
+                                }                                
+                            }
+                        }
 
                     //try to gemmate the Zoa
-                    Prostozoa newZoa = zoa.gemmate(rnd);
-                    zoa.makeBusy(interactCooldown);
-                    if (newZoa != null)
-                        newZoas.Add(newZoa);
-                }
+                    if (gemmating)
+                    {
+                        Prostozoa newZoa = zoa.gemmate(rnd);
+                        if (newZoa != null)
+                        {
+                            newZoas.Add(newZoa);
+                            zoa.makeBusy(interactCooldown);
+                        }
+                    }
+                }//;
                 foreach (Prostozoa zoa in newZoas)
                     addZoa(zoa);
             }
@@ -267,10 +379,10 @@ namespace ModelObjective
             double x = rnd.Next(left, right);
             double y = rnd.Next(top, bottom);
             double radius = rnd.Next(5, 10);
-            double accPower = rnd.Next(1000, 2000);
-            double rotationPower = rnd.Next(5, 20);
-            double color = rnd.Next(0, 255);
-            double viewDepth = rnd.Next(55, 100);
+            double accPower = rnd.Next(10000, 20000);
+            double rotationPower = rnd.NextDouble() * 1.3;
+            double color = rnd.NextDouble() * ZoaHSL.scale * 2 - ZoaHSL.scale;
+            double viewDepth = rnd.Next(15, 50);
             double viewWidth = rnd.Next(20, 40);
             double moveAngle = (double)rnd.Next(-314, 314) / 100;
             double moveLength = rnd.Next(3, 8);
@@ -286,11 +398,6 @@ namespace ModelObjective
             return generateRandomZoa(rnd, (int)left, (int)top, (int)right, (int)bottom);            
         }
 
-        private double aggressivenessFun(double radius, double alpha, double betta)
-        {
-            double a = -Math.Pow((radius - betta), 2);
-            double b = Math.Pow(alpha, a);
-            return -b + 1.5;
-        }
+        
     }
 }

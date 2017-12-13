@@ -7,21 +7,11 @@ using System.Threading.Tasks;
 namespace ModelObjective
 {
     public class Net
-    {
-        public static int INPUT_COUNT = 4;
-        public static int OUTPUT_COUNT = 1;
-        public static int NEURONS_COUNT = 4;
-        public static double MUTATION_LIMIT = 1;
-        public static double CONNECTION_MAX_WEIGHT = 10;
+    {                
+        public static double CONNECTION_MAX_WEIGHT = 1;
 
         public double[] input, neurons, output;
-        public double[,] conns1, conns2;
-
-        public Net(Random rnd)
-            : this(rnd, INPUT_COUNT, OUTPUT_COUNT, NEURONS_COUNT)
-        {
-
-        }
+        public double[,] conns1, conns2;        
 
         public Net(Random rnd, int inputCount, int outputCount, int neuronsCount)
         {
@@ -62,7 +52,7 @@ namespace ModelObjective
 
             for (int i = 0; i < neurons.Length; i++)
             {
-                double value = net1.neurons[i] * coeff1 + net2.neurons[i] * coeff2 + Genome.getMutation(rnd, MUTATION_LIMIT, mutationRate);
+                double value = net1.neurons[i] * coeff1 + net2.neurons[i] * coeff2 + Genome.getMutation(rnd, mutationRate);
                 if (value < -1)
                     value = -1;
                 if (value > 1)
@@ -72,7 +62,7 @@ namespace ModelObjective
             for (int i = 0; i < conns1.GetLength(0); i++)
                 for (int i2 = 0; i2 < conns1.GetLength(1); i2++)
                 {
-                    double value = net1.conns1[i, i2] * coeff1 + net2.conns1[i, i2] * coeff2 + Genome.getMutation(rnd, MUTATION_LIMIT, mutationRate);
+                    double value = net1.conns1[i, i2] * coeff1 + net2.conns1[i, i2] * coeff2 + Genome.getMutation(rnd, mutationRate);
                     if (value < -1)
                         value = -1;
                     if (value > 1)
@@ -82,7 +72,7 @@ namespace ModelObjective
             for (int i = 0; i < conns2.GetLength(0); i++)
                 for (int i2 = 0; i2 < conns2.GetLength(1); i2++)
                 {
-                    double value = net1.conns2[i, i2] * coeff1 + net2.conns2[i, i2] * coeff2 + Genome.getMutation(rnd, MUTATION_LIMIT, mutationRate);
+                    double value = net1.conns2[i, i2] * coeff1 + net2.conns2[i, i2] * coeff2 + Genome.getMutation(rnd, mutationRate);
                     if (value < -1)
                         value = -1;
                     if (value > 1)
@@ -100,11 +90,11 @@ namespace ModelObjective
             conns2 = new double[net.conns2.GetLength(0), net.conns2.GetLength(1)];
 
             for (int i = 0; i < neurons.Length; i++)
-                neurons[i] = net.neurons[i] + Genome.getMutation(rnd, MUTATION_LIMIT, mutationRate);
+                neurons[i] = net.neurons[i] + Genome.getMutation(rnd, mutationRate);
             for (int i = 0; i < conns1.GetLength(0); i++)
                 for (int i2 = 0; i2 < conns1.GetLength(1); i2++)
                 {
-                    double value = net.conns1[i, i2] + Genome.getMutation(rnd, MUTATION_LIMIT, mutationRate);
+                    double value = net.conns1[i, i2] + Genome.getMutation(rnd, mutationRate);
                     if (value < -1)
                         value = -1;
                     if (value > 1)
@@ -114,7 +104,7 @@ namespace ModelObjective
             for (int i = 0; i < conns2.GetLength(0); i++)
                 for (int i2 = 0; i2 < conns2.GetLength(1); i2++)
                 {
-                    double value = net.conns2[i, i2] + Genome.getMutation(rnd, MUTATION_LIMIT, mutationRate);
+                    double value = net.conns2[i, i2] + Genome.getMutation(rnd, mutationRate);
                     if (value < -1)
                         value = -1;
                     if (value > 1)
@@ -144,7 +134,7 @@ namespace ModelObjective
                 double processedValue = (exp - 1) / (exp + 1);
 
                 for (int i3 = 0; i3 < outputBuf.Length; i3++)
-                    outputBuf[i3] += processedValue;                
+                    outputBuf[i3] += processedValue * conns2[i3, i];                
             }
 
             for (int i3 = 0; i3 < outputBuf.Length; i3++)

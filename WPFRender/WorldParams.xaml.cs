@@ -29,7 +29,16 @@ namespace WPFRender
         }
         public WorldParams()
         {            
-            InitializeComponent();            
-        }        
+            InitializeComponent();
+
+            labelSpeedRate.Content = world.SimSpeed;
+            sliderSpeedRate.ValueChanged += SliderSpeedRate_ValueChanged;
+        }
+
+        private void SliderSpeedRate_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            world.SimSpeed = Math.Pow(sliderSpeedRate.Value, 2);
+            labelSpeedRate.Content = world.SimSpeed;
+        }
     }
 }

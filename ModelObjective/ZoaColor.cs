@@ -8,9 +8,10 @@ using System.Windows.Media;
 namespace ModelObjective
 {
     public class ZoaHSL : HSLColor
-    {        
+    {
+        public static double scale = 5;
         public ZoaHSL(double value)
-            : base(value, 255, 255 * 0.5)
+            : base(value / scale, 1, 0.5)
         {
 
         }
