@@ -37,7 +37,7 @@ namespace WPFRender
 
         private void SliderSpeedRate_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            world.SimSpeed = Math.Pow(sliderSpeedRate.Value, 2);
+            world.SimSpeed = Math.Round(Math.Pow(sliderSpeedRate.Value, 4), 1);
             labelSpeedRate.Content = world.SimSpeed;
         }
     }

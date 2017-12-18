@@ -25,10 +25,10 @@ namespace ModelObjective
             timer.Elapsed += (a, b) =>
             {
                 timer.Interval = period / world.simSpeed;
-                if (world.prostozoas.Count < lowPopulation)
+                if (world.Protozoas.Count < lowPopulation)
                     world.FoodWeight /= 1 + foodAdjusting;
                 else
-                if (world.prostozoas.Count > highPopulation)
+                if (world.Protozoas.Count > highPopulation)
                     world.FoodWeight *= 1 - foodAdjusting;
             };
             timer.Start();

@@ -1,6 +1,7 @@
 ﻿using ModelObjective;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,18 +41,41 @@ namespace WPFRender
             world = new World();
             world.FoodTick(2);
             worldController = new WorldController(world);
-            worldElem = new WorldElement(canvasWorld);
-            
+            worldElem = new WorldElement(canvasWorld);            
+
+            Stopwatch sw = new Stopwatch();            
+            List<double> buff = new List<double>();
+            worldController.OnNeedInvalidate += () =>
+            {
+                sw.Stop();
+                double mills = sw.ElapsedMilliseconds;
+                buff.Add(mills);                
+                if (Application.Current != null)
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        double total = 0;
+                        foreach (double d in buff)
+                            total += d;
+                        Title = Math.Floor((total / buff.Count)).ToString();                                                
+
+                        if (buff.Count > 4)
+                            buff.RemoveAt(0);
+                    });
+
+                sw.Restart();
+            };
 
             worldParams.world = world;
             
             canvasWorld.Children.Add(worldElem);
             worldElem.setWorld(world);
-            
+            worldElem.setController(worldController);
+
             for (int i = 0; i < 0; i++)
                 worldController.addRandomZoaInArea(rnd, 0, 0, (int)world.rightLifeBorder, (int)world.bottomLifeBorder);            
 
             worldController.Resume();
+            sw.Start();
 
             MyWindow.KeyDown += (sender, e) =>
             {

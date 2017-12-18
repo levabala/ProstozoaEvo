@@ -4,20 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ModelObjective
+namespace Model
 {
-    public class Vector
+    public struct Vector
     {
         public double x1, y1, x2, y2;
         public double dx, dy;
         public double length;
         public double alpha;
-
-        public Vector()
-            : this(0, 0, 0, 0)
-        {
-
-        }
 
         public Vector(Pnt p1, Pnt p2)
             : this(p1.x, p1.y, p2.x, p2.y)
@@ -35,14 +29,17 @@ namespace ModelObjective
             dx = x2 - x1;
             dy = y2 - y1;
 
+            length = alpha = 0;
+
             length = calcLength();
             alpha = calcAlpha();
         }        
 
         public Vector(double alpha, double length)
-        {            
-            x1 = y1 = 0;
-            this.alpha = alpha;
+        {
+            x1 = y1 = x2 = y2 = dx = dy = 0;
+            this.length = 0;
+            this.alpha = alpha;            
             setLength(length);            
         }        
 
@@ -149,6 +146,17 @@ namespace ModelObjective
             return angle;
         }
 
+        public static double GetAlpha(double dx, double dy)
+        {
+            if (dx == 0)                            
+                return 0;            
+            double angle = Math.Atan(dy / dx);
+            if ((dx < 0 && dy < 0) || (dx < 0 && dy >= 0))
+                angle -= Math.PI;
+
+            return angle;
+        }
+
         public Vector clone()
         {
             Vector v = new Vector();
@@ -168,6 +176,11 @@ namespace ModelObjective
         {
             double dx = p2.x - p1.x;
             double dy = p2.y - p1.y;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        public static double GetLength(double dx, double dy)
+        {            
             return Math.Sqrt(dx * dx + dy * dy);
         }
     }

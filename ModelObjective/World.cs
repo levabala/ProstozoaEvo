@@ -10,19 +10,19 @@ namespace ModelObjective
 {
     public class World 
     {
-        public delegate void NewZoaHandler(object sender, Prostozoa zoa);
+        public delegate void NewZoaHandler(object sender, Protozoa zoa);
         public event NewZoaHandler OnNewZoa;
 
-        public delegate void DeathZoaHandler(object sender, Prostozoa zoa);
+        public delegate void DeathZoaHandler(object sender, Protozoa zoa);
         public event DeathZoaHandler OnDeathZoa;
 
-        public List<Prostozoa> prostozoas = new List<Prostozoa>();
-        public List<Pnt> food = new List<Pnt>();
+        public List<Protozoa> Protozoas = new List<Protozoa>();
+        public List<Food> food = new List<Food>();
 
         long increment = 0;
         Random rnd = new Random();
 
-        public double maxMoveSpeed = 50; //pixels/second
+        public double maxMoveSpeed = 100; //pixels/second
         public int maxFoodCount = 300;
         public double simSpeed = 1;
         public double aggressiveness = 0.1; // -radius/second (for radius^2)
@@ -31,8 +31,8 @@ namespace ModelObjective
         public double fertility = 0.0005;// food_spawned*km^2/second
         public double foodWeight = 15;
         public double minLifeRadius = 1;
-        public double noizeWeight = 0.3;
-        public double interactCooldown = 0.2;
+        public double noizeWeight = 0;
+        public double interactCooldown = 2;
         public double eatCooldown = 0.2;
         public double agressivenessRadiusWeight = 2;//1.02;
         public double optimalRadius = 10;
@@ -55,8 +55,8 @@ namespace ModelObjective
         public double LifeZoneHeight { get { return bottomLifeBorder; } set { bottomLifeBorder = value; area = (rightLifeBorder - leftLifeBorder) * (bottomLifeBorder - topLifeBorder); } }
 
         public double leftLifeBorder = 0;
-        public double rightLifeBorder = 800;
-        public double bottomLifeBorder = 500;
+        public double rightLifeBorder = 1500;
+        public double bottomLifeBorder = 1000;
         public double topLifeBorder = 0;
         public double area = 1;
 
@@ -79,11 +79,11 @@ namespace ModelObjective
             addZoa(generateRandomZoa(rnd, leftLifeBorder, topLifeBorder, rightLifeBorder, bottomLifeBorder));
         }
 
-        public void addZoa(Prostozoa zoa)
+        public void addZoa(Protozoa zoa)
         {
             zoa.id = increment++;
-            lock (prostozoas)
-                prostozoas.Add(zoa);
+            lock (Protozoas)
+                Protozoas.Add(zoa);
 
             if (OnNewZoa != null)
                 OnNewZoa(this, zoa);
@@ -101,9 +101,9 @@ namespace ModelObjective
 
             while(time > worldTickTime)
             {                
-                FoodTick(time);
+                FoodTick(worldTickTime);
                 //ControlTick(time);
-                calcMoving(time);
+                calcMoving(worldTickTime);
 
                 time -= worldTickTime;
             }
@@ -129,16 +129,8 @@ namespace ModelObjective
         private double aggressivenessFun(double radius)
         {
             //https://www.desmos.com/calculator/flcikir4kw
-            /*double b = 18;
-            double a = 0.996;
-            double c = 18.2;
             double o = optimalRadius;
-
-            double res = b * (-Math.Pow(a, Math.Pow(radius - optimalRadius, 2))) + c;
-            return res;*/
-
-            double o = optimalRadius;
-            double k = 0.01;
+            double k = 0.05;
 
             double res = k * Math.Pow((radius - o), 2) + 1;
             return res;
@@ -152,10 +144,10 @@ namespace ModelObjective
             if (notContolledTime > controlTickTime)
                 ControlTick(notContolledTime);
 
-            lock (prostozoas)
+            lock (Protozoas)
             {
-                List<Prostozoa> toKill = new List<Prostozoa>();
-                Parallel.ForEach(prostozoas, (zoa) =>
+                List<Protozoa> toKill = new List<Protozoa>();
+                Parallel.ForEach(Protozoas, (zoa) =>
                 {
                     //apply aggressiveness
                     double coeff = aggressivenessFun(zoa.radius);//, agressivenessRadiusWeight, optimalRadius);
@@ -184,10 +176,10 @@ namespace ModelObjective
 
                     zoa.updatePoints();
                 });
-                foreach (Prostozoa zoa in toKill)
-                    prostozoas.Remove(zoa);
+                foreach (Protozoa zoa in toKill)
+                    Protozoas.Remove(zoa);
 
-                if (stablePopulationSize > prostozoas.Count)
+                if (stablePopulationSize > Protozoas.Count)
                     addZoa(generateRandomZoa(rnd, leftLifeBorder, topLifeBorder, rightLifeBorder, bottomLifeBorder));
             }
         }
@@ -202,7 +194,7 @@ namespace ModelObjective
 
             if (totalFertility * time < 1)
             {
-                bufferedTime += realTime;
+                bufferedTime = time;
                 return;
             }
 
@@ -210,12 +202,15 @@ namespace ModelObjective
 
             lock (food)
             {
-                int count = (int)(totalFertility * time);
+                if (food.Count >= maxFoodCount)
+                    return;
+    
+                int count = (int)(totalFertility * time);                
                 for (int i = 0; i < count; i++)
-                    food.Add(new Pnt(rnd.Next((int)leftLifeBorder, (int)rightLifeBorder), rnd.Next((int)topLifeBorder, (int)bottomLifeBorder)));
-
-                if (food.Count > maxFoodCount)
-                    food = food.Skip(food.Count - maxFoodCount).ToList();
+                {
+                    Pnt point = new Pnt(rnd.Next((int)leftLifeBorder, (int)rightLifeBorder), rnd.Next((int)topLifeBorder, (int)bottomLifeBorder));
+                    food.Add(new Food(point, rnd.NextDouble(), rnd.NextDouble(), rnd.NextDouble()));
+                }
             }
         }
 
@@ -223,54 +218,64 @@ namespace ModelObjective
         {
             notContolledTime = 0;
             
-            lock (prostozoas)
+            lock (Protozoas)
             {
-                List<Prostozoa> newZoas = new List<Prostozoa>();
-                //Parallel.ForEach(prostozoas, (zoa) =>
-                foreach (Prostozoa zoa in prostozoas)
+                List<Protozoa> newZoas = new List<Protozoa>();
+                //Parallel.ForEach(Protozoas, (zoa) =>
+                foreach (Protozoa zoa in Protozoas)
                 {
                     //check cooldown
                     zoa.cooldown -= time;
-                    if (zoa.cooldown > 0)
-                        return;
 
                     //eat under-body food
-                    lock (food)
-                    {
-                        foreach (Pnt f in food)
+                    if (zoa.cooldown <= 0)
+                        lock (food)
                         {
-                            double dist = new Vector(zoa.centerP, f).length;
-                            if (dist < zoa.radius)
+                            foreach (Food f in food)
                             {
-                                food.Remove(f);
-                                zoa.radius += foodWeight;
-                                zoa.makeBusy(eatCooldown);
-                                break;
+                                double dist = Vector.GetLength(zoa.centerP, f.point);
+                                if (dist < zoa.radius)
+                                {
+                                    food.Remove(f);
+                                    zoa.radius += foodWeight * zoa.eatValue(f);
+                                    zoa.makeBusy(eatCooldown);
+                                    break;
+                                }
                             }
                         }
-                    }
 
                     //change acceleration due to food distribution
-                    double foodLeft = 0, foodRight = 0;
+                    double 
+                        meatLeft = 0, meatRight = 0,
+                        herbLeft = 0, herbRight = 0,
+                        waterLeft = 0, waterRight = 0;
                     lock (food)
-                        foreach (Pnt f in food)
+                        foreach (Food f in food)
                         {
-                            double dist = new Vector(zoa.centerP, f).length;
+                            double dist = Vector.GetLength(zoa.centerP, f.point);
                             if (dist > zoa.viewDepth * zoa.radius)
                                 continue;
-                            if (pointInTriangle(f, zoa.leftP, zoa.farCenterP, zoa.centerP))
-                                foodLeft += 1 / dist;
+                            if (pointInTriangle(f.point, zoa.leftP, zoa.farCenterP, zoa.centerP))
+                            {
+                                meatLeft += f.meat / (dist * dist);
+                                herbLeft += f.herb / (dist * dist);
+                                waterLeft += f.water / (dist * dist);
+                            }
                             else
-                            if (pointInTriangle(f, zoa.rightP, zoa.farCenterP, zoa.centerP))
-                                foodLeft += 1 / dist;
+                            if (pointInTriangle(f.point, zoa.rightP, zoa.farCenterP, zoa.centerP))
+                            {
+                                meatLeft += f.meat / (dist * dist);
+                                herbLeft += f.herb / (dist * dist);
+                                waterLeft += f.water / (dist * dist);
+                            }
                         }
                     double zoasLeft = 0, zoasRight = 0, colorLeft = 0, colorRight = 0;
-                    foreach (Prostozoa z in prostozoas)
+                    foreach (Protozoa z in Protozoas)
                         if (z.id != zoa.id)
                             if (pointInTriangle(z.centerP, zoa.leftP, zoa.farCenterP, zoa.centerP))
                             {
-                                double dist = new Vector(zoa.centerP, z.centerP).length;
-                                double coeff = 1 / dist;
+                                double dist = Vector.GetLength(zoa.centerP, z.centerP);
+                                double coeff = 1 / (dist * dist);
                                 if (dist == 0)
                                     coeff = 0;
                                 zoasLeft += coeff * z.radius;
@@ -279,74 +284,85 @@ namespace ModelObjective
                             else
                             if (pointInTriangle(z.centerP, zoa.rightP, zoa.farCenterP, zoa.centerP))
                             {
-                                double dist = new Vector(zoa.centerP, z.centerP).length;
-                                double coeff = 1 / dist;
+                                double dist = Vector.GetLength(zoa.centerP, z.centerP);
+                                double coeff = 1 / (dist * dist);
                                 if (dist == 0)
                                     coeff = 0;
                                 zoasRight += coeff * z.radius;
                                 colorRight = (colorRight + coeff * ((zoa.color - z.color) / ZoaHSL.scale) * z.radius) / 2;
                             }
 
-                    double sum = foodLeft + foodRight;
-                    double sum2 = zoasLeft + zoasRight;
+                    double sum = meatLeft + meatRight + herbLeft + herbRight + waterLeft + waterRight;
+                    double sumLeft = meatLeft + herbLeft + waterLeft;
+                    double sumRight = meatRight + herbRight + waterRight;
+                    double sumMeat = meatLeft + meatRight;
+                    double sumHerb = herbLeft + herbRight;
+                    double sumWater = waterLeft + waterRight;
                     double noFood = 0;
-                    if (sum == 0)
-                    {
+                    if (sum == 0)                    
                         sum = noFood = 1;
-                    }
-                    if (sum2 == 0)
-                        sum2 = 1;
-
-                    double noize = (rnd.NextDouble() * 2 - 1) * noizeWeight;
+                    if (sumMeat == 0)
+                        sumMeat = 1;
+                    if (sumHerb == 0)
+                        sumHerb = 1;
+                    if (sumWater == 0)
+                        sumWater = 1;
 
                     zoa.moveControl(new double[] {
-                        foodLeft / sum,
-                        foodRight / sum,
-                        noFood,
-                        noize,
-                        zoasLeft / sum2,
-                        zoasRight / sum2,
+                        sumLeft / sum,
+                        sumRight / sum,
+                        meatLeft / sumMeat,
+                        meatRight / sumMeat,
+                        herbLeft / sumHerb,
+                        herbRight / sumHerb,
+                        waterLeft / sumWater,
+                        waterRight / sumWater,
+                        noFood,                                                
                         colorLeft,
                         colorRight
                     }, time);
 
-                    //now collision between zoas                                   
-                    foreach (Prostozoa zz in prostozoas)
-                        if (zz.radius != 0 && zoa.radius > zz.radius && zz.id != zoa.id)
-                        {
-                            double dist = new Vector(zoa.centerP, zz.centerP).length;
-                            if (dist < zz.radius + zoa.radius)
+                    //now collision between zoas        
+                    if (zoa.cooldown <= 0)
+                        foreach (Protozoa zz in Protozoas)
+                            if (zz.radius != 0 && zoa.radius > zz.radius && zz.id != zoa.id)
                             {
-                                double[] input = new double[] { Math.Abs(zoa.color - zz.color) / ZoaHSL.scale, optimalRadius / zoa.radius - 1 };
-                                double[] res = zoa.interactControl(input);
-                                double toEat = res[0];
-                                double toLove = res[1];
-
-                                if (toLove <= 0 && toEat <= 0)
-                                    continue;
-
-                                if (toLove > toEat)
+                                double dist = Vector.GetLength(zoa.centerP, zz.centerP);
+                                if (dist < zz.radius + zoa.radius)
                                 {
-                                    Prostozoa child = zoa.love(rnd, zz);
-                                    if (child != null)
+                                    double[] input = new double[] {
+                                        Math.Abs(zoa.color - zz.color) / ZoaHSL.scale,
+                                        optimalRadius / zoa.radius - 1 };
+                                    double[] res = zoa.interactControl(input);
+                                    double toEat = res[0];
+                                    double toLove = res[1];
+
+                                    if (toLove <= 0 && toEat <= 0)
+                                        continue;
+
+                                    if (toLove > toEat)
                                     {
-                                        newZoas.Add(child);
-                                        zoa.makeBusy(interactCooldown);
+                                        Protozoa child = zoa.love(rnd, zz);
+                                        if (child != null)
+                                        {
+                                            newZoas.Add(child);
+                                            child.makeBusy(interactCooldown);
+                                            zoa.makeBusy(interactCooldown);
+                                        }
                                     }
+                                    else
+                                    {
+                                        zoa.radius += zoa.eatValue(zz);
+                                        zz.radius = 0;
+                                        zoa.makeBusy(eatCooldown);
+                                    }                                
                                 }
-                                else
-                                {
-                                    zoa.radius += zz.radius;
-                                    zz.radius = 0;
-                                    zoa.makeBusy(eatCooldown);
-                                }                                
                             }
-                        }
 
                     //try to gemmate the Zoa
-                    if (gemmating)
+                    if (gemmating && zoa.cooldown <= 0)
                     {
-                        Prostozoa newZoa = zoa.gemmate(rnd);
+                        Protozoa newZoa = zoa.gemmate(rnd);
                         if (newZoa != null)
                         {
                             newZoas.Add(newZoa);
@@ -354,7 +370,7 @@ namespace ModelObjective
                         }
                     }
                 }//;
-                foreach (Prostozoa zoa in newZoas)
+                foreach (Protozoa zoa in newZoas)
                     addZoa(zoa);
             }
         }
@@ -369,31 +385,35 @@ namespace ModelObjective
             bool b1, b2, b3;
             b1 = sign(pt, v1, v2) < 0;
             b2 = sign(pt, v2, v3) < 0;
+            if (b1 != b2)
+                return false;
             b3 = sign(pt, v3, v1) < 0;
-
-            return ((b1 == b2) && (b2 == b3));
+            return b2 == b3;
         }
 
-        public static Prostozoa generateRandomZoa(Random rnd, int left, int top, int right, int bottom)
+        public static Protozoa generateRandomZoa(Random rnd, int left, int top, int right, int bottom)
         {
             double x = rnd.Next(left, right);
             double y = rnd.Next(top, bottom);
-            double radius = rnd.Next(5, 10);
-            double accPower = rnd.Next(10000, 20000);
+            double radius = rnd.Next(7, 15);
+            double accPower = rnd.Next(30000, 50000);
             double rotationPower = rnd.NextDouble() * 1.3;
             double color = rnd.NextDouble() * ZoaHSL.scale * 2 - ZoaHSL.scale;
             double viewDepth = rnd.Next(15, 50);
             double viewWidth = rnd.Next(20, 40);
             double moveAngle = (double)rnd.Next(-314, 314) / 100;
             double moveLength = rnd.Next(3, 8);
+            double digestibilityMeat = rnd.NextDouble();
+            double digestibilityHerb = rnd.NextDouble();
+            double digestibilityWater = rnd.NextDouble();
             Vector moveVector = new Vector(moveAngle, moveLength);
-            Prostozoa zoa = new Prostozoa(rnd, x, y, new Constructor(radius, color, viewDepth, viewWidth, accPower, rotationPower));
+            Protozoa zoa = new Protozoa(rnd, x, y, new Constructor(radius, color, viewDepth, viewWidth, accPower, rotationPower, digestibilityMeat, digestibilityHerb, digestibilityWater));
             zoa.moveVector = moveVector;
             
             return zoa;
         }
 
-        public static Prostozoa generateRandomZoa(Random rnd, double left, double top, double right, double bottom)
+        public static Protozoa generateRandomZoa(Random rnd, double left, double top, double right, double bottom)
         {
             return generateRandomZoa(rnd, (int)left, (int)top, (int)right, (int)bottom);            
         }

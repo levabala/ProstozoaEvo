@@ -9,7 +9,10 @@ using System.Threading.Tasks;
 namespace ModelObjective
 {
     public class WorldController
-    {        
+    {
+        public delegate void NeedInvalidateHandler();
+        public event NeedInvalidateHandler OnNeedInvalidate;
+
         World world;        
         Stopwatch worldWatch = new Stopwatch();
         Timer worldTimer = new Timer(8);        
@@ -18,16 +21,23 @@ namespace ModelObjective
         public WorldController(World world)
         {
             this.world = world;
-            
+            OnNeedInvalidate += () => { };
+
             worldTimer.Elapsed += (a, b) =>
             {
                 lock (locker)
                 {
+                    worldTimer.Stop();
                     worldWatch.Stop();
+
                     double time = worldWatch.Elapsed.TotalMilliseconds / 1000;
                     time = world.multiplyTimeDueToSimSpeed(time);
 
-                    world.WorldTick(time);
+                    world.WorldTick(time);                    
+                    
+                    OnNeedInvalidate();
+                    
+                    worldTimer.Start();
                     worldWatch.Restart();
                 }                
             };            
@@ -47,7 +57,7 @@ namespace ModelObjective
 
         public void addRandomZoaInArea(Random rnd, int left, int top, int right, int bottom)
         {
-            Prostozoa zoa = World.generateRandomZoa(rnd, left, top, right, bottom);            
+            Protozoa zoa = World.generateRandomZoa(rnd, left, top, right, bottom);            
             world.addZoa(zoa);
         }
     }

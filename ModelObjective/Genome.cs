@@ -8,8 +8,25 @@ namespace ModelObjective
 {
     public struct Genome
     {
-        public static int moveIn = 8;
-        public static int moveNeur = 4;
+        //move In:
+        /* foodLeft
+         * foodRight
+         * meatLeft
+         * meatRight
+         * herbLeft
+         * herbRight
+         * waterLeft
+         * waterRight
+         * noFood
+         * zoasColorLeft
+         * zoasColorRight
+         */
+        //interact In:
+        /* colorDiff
+         * myOptimalRadiusDiff
+         */
+        public static int moveIn = 11;
+        public static int moveNeur = 11;
         public static int moveOut = 2;
         public static int intreractIn = 2;
         public static int intreractNeur = 2;
@@ -51,8 +68,8 @@ namespace ModelObjective
 
             constructor = new Constructor(rnd, g1.constructor, g2.constructor, coeff1, coeff2, mutRateConstr);
 
-            moveNet = new Net(rnd, g1.moveNet, g2.moveNet, weight1, weight2, mutRateNet);
-            interactNet = new Net(rnd, g1.interactNet, g2.interactNet, weight1, weight2, mutRateNet);            
+            moveNet = new Net(rnd, g1.moveNet, g2.moveNet, coeff1, coeff2, mutRateNet);
+            interactNet = new Net(rnd, g1.interactNet, g2.interactNet, coeff1, coeff2, mutRateNet);            
         }  
         
         public Genome(Random rnd, Genome genome, double mutRateConstr, double mutRateNet)
@@ -72,6 +89,7 @@ namespace ModelObjective
     {
         public static int COUNT = 5;
         public double radius, color, viewDepth, viewWidth, accPower, rotationPower;
+        public double digestibilityMeat, digestibilityHerb, digestibilityWater;
 
         public Constructor(Random rnd, Constructor constr1, Constructor constr2, double coeff1, double coeff2, double mutationRate)
         {
@@ -81,6 +99,9 @@ namespace ModelObjective
             viewWidth = mutateIt(rnd, constr1.viewWidth * coeff1 + constr2.viewWidth * coeff2, mutationRate);
             accPower = mutateIt(rnd, constr1.accPower * coeff1 + constr2.accPower * coeff2, mutationRate);
             rotationPower = mutateIt(rnd, constr1.rotationPower * coeff1 + constr2.rotationPower * coeff2, mutationRate);
+            digestibilityMeat = mutateIt(rnd, constr1.digestibilityMeat * coeff1 + constr2.digestibilityMeat * coeff2, mutationRate);
+            digestibilityHerb = mutateIt(rnd, constr1.digestibilityHerb * coeff1 + constr2.digestibilityHerb * coeff2, mutationRate);
+            digestibilityWater = mutateIt(rnd, constr1.digestibilityWater * coeff1 + constr2.digestibilityWater * coeff2, mutationRate);
         }
 
         public Constructor(Random rnd)
@@ -91,9 +112,12 @@ namespace ModelObjective
             viewWidth = rnd.NextDouble();
             accPower = rnd.NextDouble();
             rotationPower = rnd.NextDouble();
+            digestibilityMeat = rnd.NextDouble();
+            digestibilityHerb = rnd.NextDouble();
+            digestibilityWater = rnd.NextDouble();
         }
 
-        public Constructor(double radius, double color, double viewDepth, double viewWidth, double accPower, double rotationPower)
+        public Constructor(double radius, double color, double viewDepth, double viewWidth, double accPower, double rotationPower, double digestibilityMeat, double digestibilityHerb, double digestibilityWater)
         {
             this.radius = radius;
             this.color = color;
@@ -101,11 +125,14 @@ namespace ModelObjective
             this.viewWidth = viewWidth;
             this.accPower = accPower;
             this.rotationPower = rotationPower;
+            this.digestibilityMeat = digestibilityMeat;
+            this.digestibilityHerb = digestibilityHerb;
+            this.digestibilityWater = digestibilityWater;
         }
 
         public Constructor clone()
         {
-            return new Constructor(radius, color, viewDepth, viewWidth, accPower, rotationPower);
+            return new Constructor(radius, color, viewDepth, viewWidth, accPower, rotationPower, digestibilityMeat, digestibilityHerb, digestibilityWater);
         }
 
         private static double mutateIt(Random rnd, double val1, double val2, double mutationRate)

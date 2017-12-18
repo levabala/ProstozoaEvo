@@ -6,19 +6,22 @@ using System.Threading.Tasks;
 
 namespace ModelObjective
 {
-    public class Prostozoa
+    public class Protozoa
     {        
         public long id;
 
         public Pnt centerP, leftP, rightP, farCenterP;
-        public double x, y, radius, accPower, rotationPower, color, viewDepth, viewWidth;                
+        public double 
+            x, y, radius, accPower, rotationPower, color, 
+            viewDepth, viewWidth,
+            digestibilityMeat, digestibilityHerb, digestibilityWater;                
         public double cooldown = 0;
         public Vector moveVector, accVector;
         public Genome genome;
 
         double viewAngle;
 
-        public Prostozoa(Random rnd, double x, double y, long id = 0)
+        public Protozoa(Random rnd, double x, double y, long id = 0)
         {
             this.x = x;
             this.y = y;
@@ -30,7 +33,7 @@ namespace ModelObjective
             applyConstructor(rnd, new Constructor(rnd));
         }
 
-        public Prostozoa(double x, double y, Genome genome, long id = 0)
+        public Protozoa(double x, double y, Genome genome, long id = 0)
         {
             this.x = x;
             this.y = y;
@@ -43,7 +46,7 @@ namespace ModelObjective
             applyConstructor(genome.constructor);            
         }
 
-        public Prostozoa(
+        public Protozoa(
             Random rnd,
             double x, double y, Constructor constructor, long id = 0)
         {
@@ -57,7 +60,7 @@ namespace ModelObjective
             applyConstructor(rnd, constructor);                       
         }                      
 
-        public Prostozoa gemmate(Random rnd)
+        public Protozoa gemmate(Random rnd)
         {
             double mutateRate = 0.1;
             if (radius < genome.constructor.radius * (1 + mutateRate) * 3)
@@ -69,13 +72,13 @@ namespace ModelObjective
 
             double dx = rnd.Next(-(int)radius, (int)radius) + radius * Math.Sign(rnd.Next(-1, 0));
             double dy = rnd.Next(-(int)radius, (int)radius) + radius * Math.Sign(rnd.Next(-1, 0));
-            Prostozoa newZoa = new Prostozoa(x + dx, y + dy , childGenome, 0);               
+            Protozoa newZoa = new Protozoa(x + dx, y + dy , childGenome, 0);               
             radius -= newZoa.radius;            
 
             return newZoa;
         }
 
-        public Prostozoa love(Random rnd, Prostozoa zz)
+        public Protozoa love(Random rnd, Protozoa zz)
         {
             double mutateRate = 0.1;
 
@@ -87,7 +90,7 @@ namespace ModelObjective
 
             double dx = rnd.Next(-(int)radius, (int)radius) + radius * Math.Sign(rnd.Next(-1, 0));
             double dy = rnd.Next(-(int)radius, (int)radius) + radius * Math.Sign(rnd.Next(-1, 0));
-            Prostozoa newZoa = new Prostozoa(x + dx, y + dy, childGenome, 0);
+            Protozoa newZoa = new Protozoa(x + dx, y + dy, childGenome, 0);
             radius -= newZoa.radius / 2;
             zz.radius -= newZoa.radius / 2;
 
@@ -135,11 +138,22 @@ namespace ModelObjective
             {
                 Console.WriteLine("WTF");
                 return;
-            }
-            if (Math.Abs(acc) < 0.1)
-                Console.WriteLine("asd");
+            }            
             acc = Math.Abs(acc);
             accVector = new Vector(moveAngle, accPower);// cc);
+        }
+
+        public double eatValue(Food f)
+        {
+            return f.meat * digestibilityMeat + f.herb * digestibilityHerb + f.water * digestibilityWater;
+        }
+
+        public double eatValue(Protozoa zoa)
+        {
+            double meat = zoa.radius * zoa.digestibilityMeat;
+            double herb = zoa.radius * zoa.digestibilityHerb;
+            double water = zoa.radius * zoa.digestibilityWater;
+            return meat * digestibilityMeat + herb * digestibilityHerb + water * digestibilityWater;
         }
 
         private void applyConstructor(Constructor constructor)
@@ -155,7 +169,12 @@ namespace ModelObjective
             viewDepth = constructor.viewDepth;
             viewWidth = constructor.viewWidth;
             rotationPower = constructor.rotationPower;
-            viewAngle = 2 * Math.Atan(viewWidth / viewDepth);            
+            viewAngle = 2 * Math.Atan(viewWidth / viewDepth);
+
+            double sum = constructor.digestibilityMeat + constructor.digestibilityHerb + constructor.digestibilityWater;
+            digestibilityMeat = constructor.digestibilityMeat / sum;
+            digestibilityHerb = constructor.digestibilityHerb / sum;
+            digestibilityWater = constructor.digestibilityWater / sum;
         }
 
         private void applyConstructor(Random rnd, Constructor constructor)

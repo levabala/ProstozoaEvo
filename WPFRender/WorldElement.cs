@@ -1,6 +1,7 @@
 ﻿using ModelObjective;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,9 +15,13 @@ using System.Windows.Shapes;
 namespace WPFRender
 {
     public class WorldElement : FrameworkElement
-    {        
+    {
+        public delegate void UpdateFun();
+
+        UpdateFun updateFun;
         Matrix matrix;
-        World world;        
+        World world;
+        WorldController controller;
         IInputElement container;
         double foodWidth = 5;
         double viewedSize = 6;
@@ -49,16 +54,35 @@ namespace WPFRender
             container.MouseLeftButtonDown += On_MouseDown;
         }
         
+        public void setController(WorldController controller)
+        {            
+            this.controller = controller;
+            updateTimer.Interval = 60;
+
+            controller.OnNeedInvalidate += controllerUpdateTick;
+        }
+        
         public void setWorld(World world)
         {
             this.world = world;
+            updateFun = selfUpdate;
             container = (IInputElement)Parent;
             matrix = new Matrix();            
 
             updateTimer = new Timer(updateTimer.Interval);
             updateTimer.Interval = 16;            
-            updateTimer.Elapsed += (a, b) => update();
+            updateTimer.Elapsed += (a, b) => updateFun();
             updateTimer.Start();            
+        }
+
+        private void selfUpdate()
+        {
+            redraw();
+        }        
+
+        private void controllerUpdateTick()
+        {
+            redraw();
         }
 
         private void On_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -111,24 +135,25 @@ namespace WPFRender
             drawingContext.DrawRectangle(zoneBrush, new Pen(new SolidColorBrush(Colors.Black) { Opacity = 0.3 }, 10), rect);
 
             //draw food
-            List<Pnt> food;
+            List<Food> food;
             lock (world.food)
                 food = world.food.ToList();
-            foreach (Pnt point in food)
+            foreach (Food f in food)
             {
-                Point center = new Point(point.x, point.y);
+                Point center = new Point(f.point.x, f.point.y);
                 center = matrix.Transform(center);
 
                 double zeroX = matrix.Transform(new Point(0, 0)).X;
                 double width = Math.Abs(zeroX - matrix.Transform(new Point(foodWidth, 0)).X);
 
                 Pen pen = new Pen(Brushes.Black, 1);
-                drawingContext.DrawRectangle(Brushes.DarkGreen, null, new Rect(center, new Size(width, width)));
+                SolidColorBrush brush = new SolidColorBrush(Color.FromRgb((byte)(f.meat * 255), (byte)(f.herb * 255), (byte)(f.water * 255)));
+                drawingContext.DrawRectangle(brush, null, new Rect(center, new Size(width, width)));
             }
 
             //draw zoas
-            lock (world.prostozoas)
-                foreach (Prostozoa zoa in world.prostozoas)
+            lock (world.Protozoas)
+                foreach (Protozoa zoa in world.Protozoas)
                 {
                     Point center = new Point(zoa.x, zoa.y);
                     center = matrix.Transform(center);
@@ -160,6 +185,8 @@ namespace WPFRender
                     {
                         Opacity = zoa.radius / viewedSize
                     };
+                    if (zoa.cooldown > 0)
+                        circleBrush.Opacity = 0.5;
                     circleBrush.Freeze();
 
                     drawingContext.DrawGeometry(viewBrush, pen, viewZoneGeometry);
@@ -167,7 +194,7 @@ namespace WPFRender
                 }            
         }
 
-        public void update()
+        public void redraw()
         {
             try
             {

@@ -8,7 +8,7 @@
              Name="WindowWP" Height="369.333" Width="300.534">
     <Grid>
         <Label Content="Speed rate:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-        <Slider Margin="103,16,58,0" x:Name="sliderSpeedRate" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.5" Maximum="10.0"/>
+        <Slider Margin="103,16,58,0" x:Name="sliderSpeedRate" VerticalAlignment="Top" RenderTransformOrigin="3.151,0.557" Minimum="0.5" Maximum="10"/>
         <Label x:Name="labelSpeedRate"  Margin="0,12,5,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="48" Height="24"/>
 
         <Label Content="Toxicity:" HorizontalAlignment="Left" Margin="10,39,0,0" VerticalAlignment="Top"/>
