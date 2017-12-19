@@ -9,8 +9,8 @@ namespace Model
     public class Genome
     {
         //acc angle net (where to go)
-        public Net accAngleNet = new Net(new int[] { 8, 8, 4, 2, 1 });
-        /* 8 -> 8 -> 4 -> 2 -> 1
+        public Net accAngleNet = new Net(new int[] { 9, 9, 5, 3, 1 });
+        /* 9 -> 9 -> 5 -> 3 -> 1
          * FireFood
          * GrassFood
          * OceanFood
@@ -23,15 +23,16 @@ namespace Model
          * out: acceleration angle [-1, 1]
          */
         //energy use net (how to use energy: speed up or increase radius)
-        public Net energyUseNet = new Net(new int[] { 4, 4, 2, 2 });
-        /* 4 -> 4 -> 2 -> 2
+        public Net energyUseNet = new Net(new int[] { 4, 4, 3, 3 });
+        /* 4 -> 4 -> 3 -> 3
          * energy
          * radius
          * intoxication
          * toxicity (from environment)
          * fear
          * out: speed up        [-1, 1]
-         * out: increase radius [-1, 1] (if both are < 0 => use nothing)
+         * out: increase radius [-1, 1]
+         * out: consumptionRate [-1, 1] (if < 0 => 0)
          */
         //interactFood net
         public Net interactFoodNet = new Net(new int[] { 6, 6, 3, 1 });
@@ -56,6 +57,13 @@ namespace Model
          * out: eat?  [-1, 1]
          * out: love? [-1, 1] (if both are < 0 => nothing to do)
          */
+        //fear net
+        public Net fearNet = new Net(new int[] { 2, 2, 1 });
+        /*
+         * radiusDifference (mine - his)
+         * colorDifference  Math.abs(mine - his)
+         * out: fear [-1, 1]
+         */ 
 
         public Constructor constructor;
 
@@ -66,6 +74,7 @@ namespace Model
             energyUseNet.fillWeights(rnd);
             interactFoodNet.fillWeights(rnd);
             interactZoaNet.fillWeights(rnd);
+            fearNet.fillWeights(rnd);
         }
 
         public Genome(Random rnd, Constructor constructor)
@@ -75,6 +84,7 @@ namespace Model
             energyUseNet.fillWeights(rnd);
             interactFoodNet.fillWeights(rnd);
             interactZoaNet.fillWeights(rnd);
+            fearNet.fillWeights(rnd);
         }
 
         public Genome(Random rnd, Genome g1, Genome g2, double weight1, double weight2, double mutativeC, double mutativeN)
@@ -89,6 +99,7 @@ namespace Model
             energyUseNet = new Net(rnd, g1.energyUseNet, g2.energyUseNet, coeff1, coeff2, mutativeN);
             interactFoodNet = new Net(rnd, g1.interactFoodNet, g2.interactFoodNet, coeff1, coeff2, mutativeN);
             interactZoaNet = new Net(rnd, g1.interactZoaNet, g2.interactZoaNet, coeff1, coeff2, mutativeN);
+            fearNet = new Net(rnd, g1.fearNet, g2.fearNet, coeff1, coeff2, mutativeN);
         }
     }
 }

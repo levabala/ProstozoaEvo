@@ -21,7 +21,7 @@ namespace Model
             fire,                   //red color
             grass,                  //green color
             ocean,                  //blue color
-            weight,                 //just (radius * 2PI + energy) 
+            weight,                 //just (radius * radius * PI + energy) 
             intoxication,           //amount of toxicity into the body. increases mutation rate and radius loss
             cooldownEat,            //eat delay
             cooldownLove,           //love delay
@@ -29,6 +29,7 @@ namespace Model
             viewWidth,              //width of view            
             fear,                   //danger memory
             fearfulness,            //fear active time
+            color,                  //HSL hue (saturation = 1, luminosity = 0.5)    
             accLimit;               //max possible acceleration
         public Vector
             moveVector,             //sum of accVector and breakingVector
@@ -46,6 +47,8 @@ namespace Model
 
         public void move(double breakingRate, double time)
         {
+            if (breakingRate < 1)
+                breakingRate = 1;
             moveVector.add(accVector.multiply(time));
             moveVector.multiply(1 / breakingRate);            
             moveVector.next();
@@ -53,20 +56,14 @@ namespace Model
             centerP.y = moveVector.y1;
         }        
 
-        public void controlAcc(List<Protozoa> zoas, List<Food> food)
+        public void controlByViewField(List<Protozoa> zoas, List<Food> food, double time)
         {
             calcViewEdges();
 
-            List<double> foodAngles = new List<double>();
-            List<double> foodFire = new List<double>();
-            List<double> foodGrass = new List<double>();
-            List<double> foodOcean = new List<double>();
-
-            double fireFSum, grassFSum, oceanFSum;
-            fireFSum = grassFSum = oceanFSum = 0;
-
-            double fireF, grassF, oceanF, fizeZ, grassZ, oceanZ;
-            fireF = grassF = oceanF = fizeZ = grassZ = oceanZ = 0;
+            Vector foodFire = Vector.ZeroVector;
+            Vector foodGrass= Vector.ZeroVector;
+            Vector foodOcean = Vector.ZeroVector;
+            
             lock (food)
                 foreach (Food f in food)
                 {
@@ -77,43 +74,184 @@ namespace Model
                         continue;
                     if (pointInTriangle(f.point, leftViewP, rightViewP, centerP))
                     {
+                        dist -= radius;
+                        double coeff = 1 / (dist * dist);
                         double angle = Vector.GetAlpha(dx, dy) - moveVector.alpha;
-                        fireFSum += f.fire;
-                        grassFSum += f.grass;
-                        oceanFSum += f.ocean;
-                        foodAngles.Add(angle);                       
-                        foodFire.Add(f.fire);
-                        foodGrass.Add(f.grass);
-                        foodOcean.Add(f.ocean);
+                        Vector v = new Vector(angle, f.fire * coeff);
+                        foodFire.add(v);
+                        v.setLength(f.grass * coeff);
+                        foodGrass.add(v);
+                        v.setLength(f.ocean * coeff);
+                        foodOcean.add(v);
                     }
                 }
 
-            for (int i = 0; i < foodAngles.Count; i++)
-            {
-                fireF += foodAngles[i] * (foodFire[i] / fireFSum);
-                grassF += foodAngles[i] * (foodGrass[i] / grassFSum);
-                oceanF += foodAngles[i] * (foodOcean[i] / oceanFSum);
-            }
 
+            Vector zoaFire = Vector.ZeroVector;
+            Vector zoaGrass = Vector.ZeroVector;
+            Vector zoaOcean = Vector.ZeroVector;
             foreach (Protozoa zoa in zoas)
             {
-                double dist = Vector.GetLength(zoa.centerP, centerP);
+                double dx = zoa.centerP.x - centerP.x;
+                double dy = zoa.centerP.y - centerP.y;
+                double dist = Vector.GetLength(dx, dy);
                 if (dist > viewDepth * radius || dist == 0)
                     continue;
-                
-                //TODO: add size to accNet + triangularing zoas
+                                
                 if (pointInTriangle(zoa.centerP, leftViewP, rightViewP, centerP))
                 {
-                        
+                    dist -= radius;
                     double coeff = 1 / (dist * dist);
-                    if (dist == 0)
-                        coeff = 0;
-                    zoasLeft += coeff * z.radius;
-                    colorLeft = (colorLeft + coeff * ((zoa.color - z.color) / ZoaHSL.scale) * z.radius) / 2;
+                    double angle = Vector.GetAlpha(dx, dy) - moveVector.alpha;
+                    Vector v = new Vector(angle, zoa.fire * radius * coeff);
+                    zoaFire.add(v);
+                    v.setLength(zoa.grass * radius * coeff);
+                    zoaGrass.add(v);
+                    v.setLength(zoa.ocean * radius * coeff);
+                    zoaOcean.add(v);
+
+                    double[] fearIn = new double[]
+                    {
+                        zoa.radius - radius,
+                        Math.Abs(zoa.color - color)
+                    };
+                    double[] fearRes = genome.fearNet.calc(fearIn);
+                    //when we see big men unlike you you'll be a little fearfull
+                    fear += fearRes[0] * fearfulness * time;
                 }                
             }
+            //let the fear go down a bit
+            fear -= (1 - fearfulness) * time;
+            if (fear > 1)
+                fear = 1;
+            else if (fear < 0)
+                fear = 0;
+            
+            double[] input = new double[]
+            {
+                foodFire.alpha / Math.PI,
+                foodGrass.alpha / Math.PI,
+                foodOcean.alpha / Math.PI,
+                zoaFire.alpha / Math.PI,
+                zoaGrass.alpha / Math.PI,
+                zoaOcean.alpha / Math.PI,
+                radius,
+                energy,
+                fear
+            };
+            double[] res = genome.accAngleNet.calc(input);
+            double accAngle = res[0];
 
-            double accAngle = genome.accAngleNet.calc();
+            accVector.alpha = accAngle;
+        }
+
+        public void controlEnergy(double toxicity)
+        {
+            double[] input = new double[]
+            {
+                energy,
+                radius,
+                intoxication,
+                toxicity,
+                fear
+            };
+            double[] res = genome.energyUseNet.calc(input);
+            double speedUp = res[0];
+            double radiusUp = res[1];
+            double consumptionRate = res[2];
+
+            if ((speedUp <= 0 && radiusUp <= 0) || consumptionRate <= 0)
+                return;
+
+            double sum = speedUp + radiusUp;
+            double speedCoeff = speedUp / sum;
+            double radiusCoeff = radiusUp / sum;
+            double energyToUse = energy * consumptionRate;
+
+            double speedUpEnergy = energyToUse * speedCoeff;
+            double radiusUpEnergy = energyToUse * radiusCoeff;
+
+            accelerate(speedUpEnergy);
+            increaseRadius(radiusUpEnergy);
+        }
+
+        public InteractType interactWithZoa(Protozoa zoa, double toxicity)
+        {
+            double[] input = new double[]
+            {
+                zoa.fire,
+                zoa.grass,
+                zoa.ocean,
+                toxicity,
+                fear,
+                energy
+            };
+            double[] res = genome.interactZoaNet.calc(input);
+            double toEat = res[0];
+            double toLove = res[1];
+
+            if (toEat < 0 && toLove < 0)
+                return InteractType.Nothing;
+            if (toLove > toEat)
+                return InteractType.Love;
+            return InteractType.Eat;
+        }
+
+        public InteractType interactWithFood(Food f, double toxicity)
+        {
+            double[] input = new double[]
+            {
+                f.fire,
+                f.grass,
+                f.ocean,
+                toxicity,
+                fear,
+                energy
+            };
+            double[] res = genome.interactFoodNet.calc(input);
+            bool toEat = (res[0] > 0) ? true : false;
+
+            if (toEat)
+            {
+                eat(f.fire, f.grass, f.ocean, toxicity);
+                return InteractType.Eat;
+            }
+            return InteractType.Nothing;
+        }   
+        
+        private void eat(double fire, double grass, double ocean, double toxicity)
+        {
+            radius += this.fire * fire + this.grass * grass + this.ocean * ocean;
+            intoxication += toxicity;
+        }
+
+        private void accelerate(double energy)
+        {
+            if (energy > this.energy)
+                energy = this.energy;
+
+            weight = calcWeight(radius, this.energy);
+
+            double acc = energy / weight;
+            accVector.setLength(accVector.length + acc);
+
+            this.energy -= energy;
+        }
+
+        private void increaseRadius(double energy)
+        {
+            if (energy > this.energy)
+                energy = this.energy;
+
+            double newRadius = Math.Sqrt((energy - Math.PI * radius * radius) / Math.PI);
+            radius = newRadius;
+
+            this.energy -= energy;
+        }
+        
+        private static double calcWeight(double radius, double energy)
+        {
+            return radius * radius * Math.PI + energy;
         }
 
         private double sign(Pnt p1, Pnt p2, Pnt p3)
@@ -165,5 +303,12 @@ namespace Model
 
             fear = 0; //maybe we need to create individual part for Memory
         }
+    }
+
+    public enum InteractType
+    {
+        Eat,
+        Love,
+        Nothing
     }
 }
