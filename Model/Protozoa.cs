@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Model
 {
     public class Protozoa
-    {
+    {               
         public Pnt                  //shoutcuts to positions and view edges
             centerP,
             leftViewP,
@@ -15,6 +15,10 @@ namespace Model
             centerViewP;
         public long
             id;
+        public bool
+            fetalStage;             //if the zoa hasn't been already borned
+        public Protozoa
+            fetus = null;
         public double            
             energy, energyCapacity, //energy can be used to: accelerate, increase radius, eat somebody, love
             radius,                 //decreases movement speed + increases intoxication
@@ -37,6 +41,14 @@ namespace Model
         public Genome 
             genome;                 //container for constructor and control nets
 
+        public Protozoa(Random rnd, Protozoa primaryParent, Protozoa secondaryParent, long id = 0)
+        {
+            this.id = id;
+            centerP = primaryParent.centerP;
+            genome = new Genome(rnd, primaryParent.genome, secondaryParent.genome);
+            applyConstructor(genome.constructor);
+        }
+
         public Protozoa(Random rnd, Pnt centerP, long id = 0)
         {
             this.centerP = centerP;
@@ -47,6 +59,9 @@ namespace Model
 
         public void move(double breakingRate, double time)
         {
+            if (fetalStage)
+                return;
+
             if (breakingRate < 1)
                 breakingRate = 1;
             moveVector.add(accVector.multiply(time));
@@ -54,7 +69,10 @@ namespace Model
             moveVector.next();
             centerP.x = moveVector.x1;
             centerP.y = moveVector.y1;
-        }        
+
+            if (fetus != null)
+                fetus.centerP = centerP;
+        }                
 
         public void controlByViewField(List<Protozoa> zoas, List<Food> food, double time)
         {
@@ -192,11 +210,8 @@ namespace Model
 
             if (toEat < 0 && toLove < 0)
                 return InteractResult.Nothing;
-            if (toLove > toEat)
-            {
-                //here loveFun call
-                return InteractResult.Love;
-            }
+            if (toLove > toEat)            
+                return InteractResult.Love;            
 
             eat(zoa.fire, zoa.grass, zoa.ocean, toxicity);
             return InteractResult.Eat;
@@ -223,6 +238,13 @@ namespace Model
             }
             return InteractResult.Nothing;
         }   
+
+        public Protozoa love(Random rnd, Protozoa zoa)
+        {
+            Protozoa newZoa = new Protozoa(rnd, this, zoa);
+            fetus = newZoa;
+            return newZoa;
+        }
         
         private void eat(double fire, double grass, double ocean, double toxicity)
         {

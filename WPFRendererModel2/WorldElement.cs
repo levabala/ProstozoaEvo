@@ -62,8 +62,14 @@ namespace WPFRendererModel2
             updateTimer.Interval = 16;
             updateTimer.Elapsed += (a, b) =>
             {
-                if (Parent != null)
+                try
+                {
                     Parent.Dispatcher.Invoke(InvalidateVisual);
+                }
+                catch (Exception e)
+                {
+
+                }
             };
             updateTimer.Start();
         }
@@ -107,7 +113,7 @@ namespace WPFRendererModel2
         {
             base.OnRender(drawingContext);
 
-            renderer.Render(drawingContext);
+            renderer.Render(drawingContext, matrix);
         }
     }
 }

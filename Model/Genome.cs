@@ -8,6 +8,8 @@ namespace Model
 {
     public class Genome
     {
+        public static double MUTATIVE = 0.1;
+
         //acc angle net (where to go)
         public Net accAngleNet = new Net(new int[] { 9, 9, 5, 3, 1 });
         /* 9 -> 9 -> 5 -> 3 -> 1
@@ -87,19 +89,19 @@ namespace Model
             fearNet.fillWeights(rnd);
         }
 
-        public Genome(Random rnd, Genome g1, Genome g2, double weight1, double weight2, double mutativeC, double mutativeN)
+        public Genome(Random rnd, Genome g1, Genome g2, double weight1 = 1, double weight2 = 1, double addMutativeC = 0, double addMutativeN = 0)
         {
             double sum = weight1 + weight2;
             double coeff1 = weight1 / sum;
             double coeff2 = weight2 / sum;
 
-            constructor = new Constructor(rnd, g1.constructor, g2.constructor, coeff1, coeff2, mutativeC);
+            constructor = new Constructor(rnd, g1.constructor, g2.constructor, coeff1, coeff2, addMutativeC);
 
-            accAngleNet = new Net(rnd, g1.accAngleNet, g2.accAngleNet, coeff1, coeff2, mutativeN);
-            energyUseNet = new Net(rnd, g1.energyUseNet, g2.energyUseNet, coeff1, coeff2, mutativeN);
-            interactFoodNet = new Net(rnd, g1.interactFoodNet, g2.interactFoodNet, coeff1, coeff2, mutativeN);
-            interactZoaNet = new Net(rnd, g1.interactZoaNet, g2.interactZoaNet, coeff1, coeff2, mutativeN);
-            fearNet = new Net(rnd, g1.fearNet, g2.fearNet, coeff1, coeff2, mutativeN);
+            accAngleNet = new Net(rnd, g1.accAngleNet, g2.accAngleNet, coeff1, coeff2, addMutativeN);
+            energyUseNet = new Net(rnd, g1.energyUseNet, g2.energyUseNet, coeff1, coeff2, addMutativeN);
+            interactFoodNet = new Net(rnd, g1.interactFoodNet, g2.interactFoodNet, coeff1, coeff2, addMutativeN);
+            interactZoaNet = new Net(rnd, g1.interactZoaNet, g2.interactZoaNet, coeff1, coeff2, addMutativeN);
+            fearNet = new Net(rnd, g1.fearNet, g2.fearNet, coeff1, coeff2, addMutativeN);
         }
     }
 }

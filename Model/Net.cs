@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 namespace Model
 {
     public class Net
-    {        
+    {
+        public static double MUTATIVE = 0.1;
+
         public double[][] neurons;
         public double[][,] conns;
 
@@ -17,15 +19,16 @@ namespace Model
             neurons = new double[layers.Length - 2][];
             for (int i = 1; i < layers.Length - 1; i++)
             {
-                conns[i] = new double[layers[i - 1], layers[i]];
+                conns[i-1] = new double[layers[i - 1], layers[i]];
                 neurons[i - 1] = new double[layers[i]];
             }
-            int last = conns.Length - 1;
-            conns[last] = new double[layers[last - 1], layers[last]];
+            int last = conns.Length;
+            conns[last - 1] = new double[layers[last - 1], layers[last]];
         }        
 
-        public Net(Random rnd, Net net1, Net net2, double coeff1, double coeff2, double mutative)
+        public Net(Random rnd, Net net1, Net net2, double coeff1, double coeff2, double addMutative = 0)
         {
+            addMutative += MUTATIVE;
             try
             {
                 neurons = new double[net1.neurons.Length][];
@@ -36,7 +39,7 @@ namespace Model
                         neurons[i][i2] =
                             net1.neurons[i][i2] * coeff1 +
                             net2.neurons[i][i2] * coeff2 +
-                            rnd.NextDouble() * 2 * mutative - mutative;
+                            rnd.NextDouble() * 2 * addMutative - addMutative;
                         if (neurons[i][i2] > 1)
                             neurons[i][i2] = 1;
                         else if (neurons[i][i2] < -1)
@@ -54,7 +57,7 @@ namespace Model
                             conns[i][i2, i3] =
                                 net1.conns[i][i2, i3] * coeff1 +
                                 net2.conns[i][i2, i3] * coeff2 +
-                                rnd.NextDouble() * 2 * mutative - mutative;
+                                rnd.NextDouble() * 2 * addMutative - addMutative;
                             if (neurons[i][i2] > 1)
                                 neurons[i][i2] = 1;
                             else if (neurons[i][i2] < -1)

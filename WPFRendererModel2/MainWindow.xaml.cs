@@ -33,10 +33,19 @@ namespace WPFRendererModel2
             Random rnd = new Random();
             World world = new World();
             WorldRenderer worldRenderer = new WorldRenderer(world);
-            WorldElement worldElement = new WorldElement(mainCanvas);            
+            WorldElement worldElement = new WorldElement(mainCanvas);
+            WorldController worldController = new WorldController(world);
 
             worldElement.setWorldRenderer(worldRenderer);
             mainCanvas.Children.Add(worldElement);
+
+            worldController.addFertilitySource();
+            worldController.addFertilitySource();
+            worldController.addNewZoa();
+            worldController.addNewZoa();
+            worldController.addNewZoa();
+
+            worldController.Resume();
         }
     }
 }

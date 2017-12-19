@@ -34,7 +34,7 @@ namespace Model
         {
             this.world = world;            
         }
-        public void Render(DrawingContext drawingContext)
+        public void Render(DrawingContext drawingContext, Matrix matrix)
         {
             //firstly, let's draw the surface
             foreach (SourcePoint spoint in world.surface.sourcePoints)
@@ -43,7 +43,7 @@ namespace Model
                 double coeff = sourcesCoeffs[spoint.sourceType];
                 brush.Opacity = surfaceOpacity;// * spoint.strength;
                 double radius = spoint.strength * coeff;
-                drawingContext.DrawEllipse(brush, null, spoint.location.toPoint(), radius, radius);
+                drawingContext.DrawEllipse(brush, null, matrix.Transform(spoint.location.toPoint()), radius, radius);
             }
 
             //now food
