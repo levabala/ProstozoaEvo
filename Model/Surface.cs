@@ -9,15 +9,31 @@ namespace Model
     public class Surface
     {
         public List<SourcePoint> sourcePoints = new List<SourcePoint>();
+        double leftB, topB, rightB, bottomB;
 
         public Surface()
         {
-
+            
         }
 
         public void addSourcePoint(SourcePoint spoint)
         {
             sourcePoints.Add(spoint);
+            if (sourcePoints.Count == 1)
+            {
+                leftB = rightB = spoint.location.x;
+                topB = bottomB = spoint.location.y;
+                return;
+            }
+
+            if (spoint.location.x < leftB)
+                leftB = spoint.location.x;
+            if (spoint.location.x > rightB)
+                rightB = spoint.location.x;
+            if (spoint.location.y < topB)
+                topB = spoint.location.y;
+            if (spoint.location.y > bottomB)
+                bottomB = spoint.location.y;
         }
 
         public Dictionary<SourceType, double> getEffectAtPoint(Pnt point)
@@ -52,6 +68,16 @@ namespace Model
                 effect += coeff * sp.strength;
             }
             return effect;
+        }
+
+        public Pnt getRandomPoint(Random rnd, int maxDistance)
+        {
+            if (sourcePoints.Count == 0)
+                return new Pnt(0, 0);
+
+            int x = rnd.Next((int)leftB - maxDistance, (int)rightB + maxDistance);
+            int y = rnd.Next((int)topB - maxDistance, (int)bottomB + maxDistance);
+            return new Pnt(x, y);
         }
     }
 

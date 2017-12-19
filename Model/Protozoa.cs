@@ -175,7 +175,7 @@ namespace Model
             increaseRadius(radiusUpEnergy);
         }
 
-        public InteractType interactWithZoa(Protozoa zoa, double toxicity)
+        public InteractResult interactWithZoa(Protozoa zoa, double toxicity)
         {
             double[] input = new double[]
             {
@@ -191,13 +191,18 @@ namespace Model
             double toLove = res[1];
 
             if (toEat < 0 && toLove < 0)
-                return InteractType.Nothing;
+                return InteractResult.Nothing;
             if (toLove > toEat)
-                return InteractType.Love;
-            return InteractType.Eat;
+            {
+                //here loveFun call
+                return InteractResult.Love;
+            }
+
+            eat(zoa.fire, zoa.grass, zoa.ocean, toxicity);
+            return InteractResult.Eat;
         }
 
-        public InteractType interactWithFood(Food f, double toxicity)
+        public InteractResult interactWithFood(Food f, double toxicity)
         {
             double[] input = new double[]
             {
@@ -214,9 +219,9 @@ namespace Model
             if (toEat)
             {
                 eat(f.fire, f.grass, f.ocean, toxicity);
-                return InteractType.Eat;
+                return InteractResult.Eat;
             }
-            return InteractType.Nothing;
+            return InteractResult.Nothing;
         }   
         
         private void eat(double fire, double grass, double ocean, double toxicity)
@@ -305,7 +310,7 @@ namespace Model
         }
     }
 
-    public enum InteractType
+    public enum InteractResult
     {
         Eat,
         Love,
