@@ -29,8 +29,8 @@ namespace Model
         public Net(Random rnd, Net net1, Net net2, double coeff1, double coeff2, double addMutative = 0)
         {
             addMutative += MUTATIVE;
-            try
-            {
+            /*try
+            {*/
                 neurons = new double[net1.neurons.Length][];
                 for (int i = 0; i < net1.neurons.Length; i++) {
                     neurons[i] = new double[net1.neurons[i].Length];
@@ -58,31 +58,40 @@ namespace Model
                                 net1.conns[i][i2, i3] * coeff1 +
                                 net2.conns[i][i2, i3] * coeff2 +
                                 rnd.NextDouble() * 2 * addMutative - addMutative;
+                            
+                        }
+                }
+
+                neurons = new double[net1.neurons.Length][];
+                for (int i = 0; i < net1.neurons.Length; i++)
+                {
+                    neurons[i] = new double[net1.neurons[i].Length];
+                    for (int i2 = 0; i2 < neurons[i].Length; i2++)                        
+                        {
                             if (neurons[i][i2] > 1)
                                 neurons[i][i2] = 1;
                             else if (neurons[i][i2] < -1)
                                 neurons[i][i2] = 1;
                         }
                 }
-            }
+            
+            /*}
             catch (Exception e)
             {
                 throw new Exception("Not compatible nets");
-            }
+            }*/
         }
 
         public void fillWeights(Random rnd)
-        {
-            //count of neurons is equal to count of connections
-            for (int i = 0; i < neurons.Length; i++)
-            {
+        {            
+            for (int i = 0; i < neurons.Length; i++)            
                 for (int i2 = 0; i2 < neurons[i].Length; i2++)
                     neurons[i][i2] = rnd.NextDouble() * 2 - 1;
 
+            for (int i = 0; i < conns.Length; i++)
                 for (int i2 = 0; i2 < conns[i].GetLength(0); i2++)
                     for (int i3 = 0; i3 < conns[i].GetLength(1); i3++)
                         conns[i][i2, i3] = rnd.NextDouble() * 2 - 1;
-            }
         }
 
         public double[] calc(double[] inputData)

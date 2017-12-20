@@ -49,7 +49,7 @@ namespace WPFRendererModel2
             container = parent;
             container.MouseWheel += On_MouseWheel;
             container.MouseMove += On_MouseMove;
-            container.MouseLeftButtonDown += On_MouseDown;
+            container.MouseLeftButtonDown += On_MouseDown;            
         }
 
         public void setWorldRenderer(WorldRenderer renderer)
@@ -57,6 +57,8 @@ namespace WPFRendererModel2
             this.renderer = renderer;            
             container = (IInputElement)Parent;
             matrix = new Matrix();
+            matrix.Translate(100, 100);
+            matrix.Scale(3, 3);
 
             updateTimer = new Timer(updateTimer.Interval);
             updateTimer.Interval = 16;

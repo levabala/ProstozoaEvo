@@ -60,18 +60,24 @@ namespace Model
         object controlLocker = new object();
         public void ControlTick(double time)
         {
-            lock (controlLocker) {
+            lock (protozoas) {
                 List<long> killedZoas = new List<long>();
                 List<Protozoa> newZoas = new List<Protozoa>();
                 foreach (Protozoa zoa in protozoas)
                 {
                     if (killedZoas.Contains(zoa.id))
-                        continue;
+                        continue;                    
 
                     //control internal processes
                     double toxicity = surface.getEffectAtPoint(zoa.centerP, SourceType.Toxicity);
                     zoa.controlByViewField(protozoas, food, time);
                     zoa.controlEnergy(toxicity);
+
+                    //go down cooldown
+                    zoa.cooldown -= time;
+
+                    if (zoa.cooldown > 0)
+                        continue;
 
                     //control interacting
                     //with food                   
@@ -80,7 +86,7 @@ namespace Model
                     {                        
                         Food f = food[i];
 
-                        InteractResult res = zoa.interactWithFood(f, toxicity);
+                        InteractResult res = zoa.interactWithFood(f);
                         if (res == InteractResult.Eat)                                                    
                             eatFIndex = i;                                                    
                     });
@@ -88,29 +94,66 @@ namespace Model
                     if (eatFIndex != -1)
                         food.RemoveAt(eatFIndex);
 
-                    //with other zoas
+                    //with other zoas  
+                    continue;
                     foreach (Protozoa otherZoa in protozoas)
                     {
-                        if (otherZoa.radius > zoa.radius || killedZoas.Contains(zoa.id) || otherZoa.id == zoa.id)
+                        double dist = Vector.GetLength(zoa.centerP, otherZoa.centerP);
+                        if (dist > otherZoa.radius + zoa.radius || otherZoa.radius > zoa.radius || killedZoas.Contains(otherZoa.id) || otherZoa.id == zoa.id)
                             continue;
-
+                        
                         InteractResult res = zoa.interactWithZoa(otherZoa, toxicity);
                         switch (res)
                         {
                             case InteractResult.Eat:
                                 killedZoas.Add(otherZoa.id);
                                 break;
-                            case InteractResult.Love:
+                            case InteractResult.Love:                                
                                 newZoas.Add(zoa.love(rnd, otherZoa));
                                 break;
                         }                    
                     }
                 }
-
+                
                 foreach (long id in killedZoas)
                     protozoas.RemoveAt(protozoas.FindIndex(z => { return z.id == id; }));
                 foreach (Protozoa zoa in newZoas)
                     addZoa(zoa);
+            }
+        }
+
+        long ff = 0;        
+        public void FoodTick(double time)
+        {
+            double step = 5;
+            foreach (SourcePoint spoint in surface.sourcePoints)
+            {
+                double dist = step;
+                double rate = (1 / dist) * spoint.strength * time;
+                double seed = rnd.NextDouble();
+                bool toSpawn = seed < rate;
+                while (dist < 500)
+                {
+                    if (seed < (1 / Math.Sqrt(dist)) * 0.001 * time)
+                    {
+                        double alpha = rnd.NextDouble() * Math.PI * 2;
+                        Pnt foodPoint = Vector.GetEndPoint(spoint.location, alpha, dist);
+                        double fire = surface.getEffectAtPoint(foodPoint, SourceType.Fire);
+                        double grass = surface.getEffectAtPoint(foodPoint, SourceType.Grass);
+                        double ocean = surface.getEffectAtPoint(foodPoint, SourceType.Ocean);
+                        double toxicity = surface.getEffectAtPoint(foodPoint, SourceType.Toxicity);
+                        Food f = new Food(foodPoint, fire, grass, ocean, toxicity);
+                        food.Add(f);
+
+                        Console.WriteLine(ff);
+                        ff = 0;
+                    }
+                    else ff++;
+
+                    seed = rnd.NextDouble();
+                    dist += step;
+                    rate = (1 / dist) * spoint.strength * time;                    
+                }
             }
         }
 
@@ -124,11 +167,6 @@ namespace Model
         public void addZoa(int distance)
         {
             addZoa(new Protozoa(rnd, surface.getRandomPoint(rnd, distance)));
-        }
-
-        public void FoodTick(double time)
-        {
-
-        }
+        }        
     }
 }

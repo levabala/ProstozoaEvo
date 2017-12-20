@@ -51,7 +51,7 @@ namespace WPFRender
             container = parent;
             container.MouseWheel += On_MouseWheel;
             container.MouseMove += On_MouseMove;
-            container.MouseLeftButtonDown += On_MouseDown;
+            container.MouseLeftButtonDown += On_MouseDown;            
         }
         
         public void setController(WorldController controller)

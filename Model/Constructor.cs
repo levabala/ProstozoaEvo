@@ -15,7 +15,7 @@ namespace Model
         public Dictionary<ParamName, Param> fields = new Dictionary<ParamName, Param>()
         {
             { ParamName.BirthEnergy, new Param(10, 1, 5) },
-            { ParamName.BirthRadius, new Param(8, 1, 3) },            
+            { ParamName.BirthRadius, new Param(3, 1, 3) },            
             { ParamName.EnergyCapacity, new Param(100, 1.2, 50) },
             { ParamName.AccLimit, new Param(5, 2, 3) },
             { ParamName.CooldownEat, new Param(0.5, 1.5, 0.3) },

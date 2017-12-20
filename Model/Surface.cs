@@ -13,7 +13,7 @@ namespace Model
 
         public Surface()
         {
-            
+
         }
 
         public void addSourcePoint(SourcePoint spoint)
@@ -78,11 +78,40 @@ namespace Model
             int x = rnd.Next((int)leftB - maxDistance, (int)rightB + maxDistance);
             int y = rnd.Next((int)topB - maxDistance, (int)bottomB + maxDistance);
             return new Pnt(x, y);
+        }        
+    }
+
+    public struct Range
+    {
+        public double from, to;
+        public Range(double from, double to)
+        {
+            this.from = from;
+            this.to = to;
+        }
+
+        public double toRange(double value)
+        {
+            if (value > to)
+                return to;
+            if (value < from)
+                return from;
+            return value;
         }
     }
 
     public struct SourcePoint
     {
+        public static Dictionary<SourceType, Range> ranges = new Dictionary<SourceType, Range>()
+        {
+            { SourceType.Fertility, new Range(0.001, 0.1) },
+            { SourceType.Toxicity, new Range(0, 1) },
+            { SourceType.Viscosity, new Range(0, 1) },
+            { SourceType.Fire, new Range(0, 1) },
+            { SourceType.Grass, new Range(0, 1) },
+            { SourceType.Ocean, new Range(0, 1) },
+        };
+
         public Pnt location;
         public SourceType sourceType;
         public double strength;
@@ -91,7 +120,15 @@ namespace Model
         {
             this.location = location;
             this.sourceType = sourceType;
-            this.strength = strength;
+            this.strength = ranges[sourceType].toRange(strength);
+        }
+
+        public SourcePoint(Pnt location, SourceType sourceType, Random rnd)
+        {
+            this.location = location;
+            this.sourceType = sourceType;
+            Range range = ranges[sourceType];
+            strength = rnd.NextDouble() * (range.to - range.from) + range.from;
         }
     }
 
@@ -99,6 +136,9 @@ namespace Model
     {
         Toxicity,
         Fertility,
-        Viscosity
+        Viscosity,
+        Fire,
+        Grass,
+        Ocean
     }
 }

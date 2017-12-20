@@ -23,7 +23,9 @@ namespace Model
             {
                 sw.Stop();
                 timer.Stop();
+                //Console.WriteLine("WorldTick Start");
                 world.WorldTick(world.multipleTime(sw.ElapsedMilliseconds));
+                //Console.WriteLine("WorldTick End");
                 timer.Start();
                 sw.Restart();
             };            
@@ -43,12 +45,12 @@ namespace Model
 
         public void addNewZoa()
         {
-            world.addZoa(100);
+            world.addZoa(50);
         }
 
-        public void addFertilitySource()
+        public void addSource(SourceType stype, double dist)
         {
-            SourcePoint spoint = new SourcePoint(world.surface.getRandomPoint(rnd, 100), SourceType.Fertility, 10);
+            SourcePoint spoint = new SourcePoint(world.surface.getRandomPoint(rnd, (int)dist), stype, rnd);
             world.surface.addSourcePoint(spoint);
         }
     }

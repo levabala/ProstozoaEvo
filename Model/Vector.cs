@@ -109,6 +109,13 @@ namespace Model
             return this;
         }
 
+        public static Pnt GetEndPoint(Pnt startP, double alpha, double length)
+        {
+            double x = length * Math.Cos(alpha) + startP.x;
+            double y = length * Math.Sin(alpha) + startP.y;
+            return new Pnt(x, y);
+        }
+
         public Vector add(Vector v)
         {
             add(v.dx, v.dy);

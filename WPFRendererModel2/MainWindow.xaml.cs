@@ -39,11 +39,15 @@ namespace WPFRendererModel2
             worldElement.setWorldRenderer(worldRenderer);
             mainCanvas.Children.Add(worldElement);
 
-            worldController.addFertilitySource();
-            worldController.addFertilitySource();
+            worldController.addSource(SourceType.Fertility, 10);
+            worldController.addSource(SourceType.Fire, 10);
+            worldController.addSource(SourceType.Grass, 10);
+            worldController.addSource(SourceType.Ocean, 10);
+            /*worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();
+            worldController.addNewZoa();*/
 
             worldController.Resume();
         }

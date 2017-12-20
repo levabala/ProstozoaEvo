@@ -19,6 +19,8 @@ namespace Model
             fetalStage;             //if the zoa hasn't been already borned
         public Protozoa
             fetus = null;
+        public ZoaColor
+            zoaColor;
         public double            
             energy, energyCapacity, //energy can be used to: accelerate, increase radius, eat somebody, love
             radius,                 //decreases movement speed + increases intoxication
@@ -29,6 +31,7 @@ namespace Model
             intoxication,           //amount of toxicity into the body. increases mutation rate and radius loss
             cooldownEat,            //eat delay
             cooldownLove,           //love delay
+            cooldown,               //general delay
             viewDepth,              //range of view
             viewWidth,              //width of view            
             fear,                   //danger memory
@@ -47,6 +50,8 @@ namespace Model
             centerP = primaryParent.centerP;
             genome = new Genome(rnd, primaryParent.genome, secondaryParent.genome);
             applyConstructor(genome.constructor);
+
+            moveVector.setStart(centerP);
         }
 
         public Protozoa(Random rnd, Pnt centerP, long id = 0)
@@ -55,6 +60,8 @@ namespace Model
             this.id = id;
             genome = new Genome(rnd);
             applyConstructor(genome.constructor);
+
+            moveVector.setStart(centerP);
         }        
 
         public void move(double breakingRate, double time)
@@ -159,6 +166,8 @@ namespace Model
             };
             double[] res = genome.accAngleNet.calc(input);
             double accAngle = res[0];
+            //we have range [-1, 1] so let's wide it up
+            accAngle *= Math.PI;
 
             accVector.alpha = accAngle;
         }
@@ -180,6 +189,11 @@ namespace Model
 
             if ((speedUp <= 0 && radiusUp <= 0) || consumptionRate <= 0)
                 return;
+
+            if (speedUp < 0)
+                speedUp = 0;
+            if (radiusUp < 0)
+                radiusUp = 0;
 
             double sum = speedUp + radiusUp;
             double speedCoeff = speedUp / sum;
@@ -217,14 +231,14 @@ namespace Model
             return InteractResult.Eat;
         }
 
-        public InteractResult interactWithFood(Food f, double toxicity)
+        public InteractResult interactWithFood(Food f)
         {
             double[] input = new double[]
             {
                 f.fire,
                 f.grass,
                 f.ocean,
-                toxicity,
+                f.toxicity,
                 fear,
                 energy
             };
@@ -233,7 +247,7 @@ namespace Model
 
             if (toEat)
             {
-                eat(f.fire, f.grass, f.ocean, toxicity);
+                eat(f.fire, f.grass, f.ocean, f.toxicity);
                 return InteractResult.Eat;
             }
             return InteractResult.Nothing;
@@ -243,6 +257,7 @@ namespace Model
         {
             Protozoa newZoa = new Protozoa(rnd, this, zoa);
             fetus = newZoa;
+            cooldown += cooldownLove;
             return newZoa;
         }
         
@@ -250,6 +265,7 @@ namespace Model
         {
             radius += this.fire * fire + this.grass * grass + this.ocean * ocean;
             intoxication += toxicity;
+            cooldown += cooldownEat;
         }
 
         private void accelerate(double energy)
@@ -270,7 +286,7 @@ namespace Model
             if (energy > this.energy)
                 energy = this.energy;
 
-            double newRadius = Math.Sqrt((energy - Math.PI * radius * radius) / Math.PI);
+            double newRadius = Math.Sqrt((energy + Math.PI * radius * radius) / Math.PI);
             radius = newRadius;
 
             this.energy -= energy;
@@ -328,6 +344,7 @@ namespace Model
             fearfulness = constr.getParamValue(ParamName.Fearfulness);
             accLimit = constr.getParamValue(ParamName.AccLimit);
 
+            zoaColor = new ZoaColor(color);
             fear = 0; //maybe we need to create individual part for Memory
         }
     }
