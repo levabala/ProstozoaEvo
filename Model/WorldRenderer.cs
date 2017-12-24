@@ -18,12 +18,12 @@ namespace Model
 
         public Dictionary<SourceType, double> sourcesCoeffs = new Dictionary<SourceType, double>()
         {
-            {SourceType.Toxicity, 50},
-            {SourceType.Fertility, 1550 },
-            {SourceType.Viscosity, 50 },
-            {SourceType.Fire, 0},
-            {SourceType.Grass, 0 },
-            {SourceType.Ocean, 0 }
+            {SourceType.Toxicity, 1},
+            {SourceType.Fertility, 0.3 },
+            {SourceType.Viscosity, 1 },
+            {SourceType.Fire, 0.3},
+            {SourceType.Grass, 0.3 },
+            {SourceType.Ocean, 0.3 }
         };
 
         //my brushes, pens
@@ -41,7 +41,79 @@ namespace Model
         {
             this.world = world;            
         }
-        public void Render(DrawingContext drawingContext, Matrix matrix)
+
+        public void Render(DrawingContext drawingContext, Matrix matrix, Point leftTopView, Point rightBottomView)
+        {
+            Point zeroPoint = matrix.Transform(new Point(0, 0));
+            drawingContext.DrawEllipse(Brushes.Black, null, zeroPoint, 50, 50);
+
+            //firstly, let's draw the surface
+            foreach (SourcePoint spoint in world.surface.sourcePoints)
+            {
+                RadialGradientBrush brush = sourceBrushes[spoint.sourceType];
+                double coeff = sourcesCoeffs[spoint.sourceType];
+                brush.Opacity = surfaceOpacity * coeff;
+                double radius = Math.Abs(zeroPoint.X - matrix.Transform(new Point(spoint.distance, 0)).X);
+                drawingContext.DrawEllipse(brush, null, matrix.Transform(spoint.location.toPoint()), radius * 2, radius * 2);
+                drawingContext.DrawEllipse(null, new Pen(new SolidColorBrush(Colors.Black) { Opacity = 0.3 }, 1), matrix.Transform(spoint.location.toPoint()), radius, radius);
+
+                double penWidth = 30;
+                double penRadius = Math.Abs(zeroPoint.X - matrix.Transform(new Point(penWidth, 0)).X);
+                //drawingContext.DrawEllipse(null, new Pen(brush, penWidth), matrix.Transform(spoint.location.toPoint()), radius, radius);
+            }
+
+            lock (world.food)
+                lock (world.protozoas)
+                    lock(world.pointsManager)
+                    {
+                        DinamicPoint[] elementsToDraw = world.pointsManager.getPoints(leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y);                        
+                        //DinamicPoint[] elementsToDraw = world.pointsManager.getPointsByIdBorders(0, 50, 0, 5);
+                        foreach (Cluster c in world.pointsManager.clusters)
+                        {
+                            Point[] edges = new Point[]
+                            {
+                                new Point(c.x, c.y),                                
+                                new Point(c.x + c.size, c.y + c.size)                                
+                            };
+                            matrix.Transform(edges);
+                            Pen pen;
+                            if (c.idX > world.pointsManager.li && c.idX < world.pointsManager.ri && c.idY > world.pointsManager.ti && c.idY < world.pointsManager.bi)
+                                pen = new Pen(Brushes.Red, 1);
+                            else pen = new Pen(Brushes.Black, 1);
+                            drawingContext.DrawRectangle(null, pen, new Rect(edges[0], edges[1]));
+                        }                            
+
+                        List<Food> foodToDraw = new List<Food>();
+                        List<Protozoa> zoasToDraw = new List<Protozoa>();
+                        foreach (DinamicPoint p in elementsToDraw)
+                            switch (p.type)
+                            {
+                                case World.ZoaType:
+                                    zoasToDraw.Add(world.protozoas[p.id]);
+                                    break;
+                                case World.FoodType:
+                                    foodToDraw.Add(world.food[p.id]);
+                                    break;
+                            }
+
+                        //now food                                
+                        foreach (Food f in foodToDraw)
+                        {
+                            Point center = new Point(f.point.x, f.point.y);
+                            center = matrix.Transform(center);
+
+                            double zeroX = matrix.Transform(new Point(0, 0)).X;
+                            double width = Math.Abs(zeroX - matrix.Transform(new Point(foodScale, 0)).X);
+
+                            Pen pen = new Pen(Brushes.Black, 1);
+                            SolidColorBrush brush = new SolidColorBrush(Color.FromRgb((byte)(f.fireRate * 255), (byte)(f.grassRate * 255), (byte)(f.oceanRate * 255)));
+                            drawingContext.DrawRectangle(brush, null, new Rect(center, new Size(width, width)));
+                        }
+                    }
+        }
+
+        //without-clustering render
+        /*public void Render(DrawingContext drawingContext, Matrix matrix)
         {
             Point zeroPoint = matrix.Transform(new Point(0, 0));
 
@@ -50,16 +122,20 @@ namespace Model
             {
                 RadialGradientBrush brush = sourceBrushes[spoint.sourceType];
                 double coeff = sourcesCoeffs[spoint.sourceType];
-                brush.Opacity = surfaceOpacity;// * spoint.strength;                
-                double radius = Math.Abs(zeroPoint.X - matrix.Transform(new Point(spoint.strength * coeff, 0)).X);
-                drawingContext.DrawEllipse(brush, null, matrix.Transform(spoint.location.toPoint()), radius, radius);
+                brush.Opacity = surfaceOpacity * coeff;                
+                double radius = Math.Abs(zeroPoint.X - matrix.Transform(new Point(spoint.distance, 0)).X);
+                drawingContext.DrawEllipse(brush, null, matrix.Transform(spoint.location.toPoint()), radius * 2, radius * 2);                
+                drawingContext.DrawEllipse(null, new Pen(new SolidColorBrush(Colors.Black) { Opacity = 0.3 }, 1), matrix.Transform(spoint.location.toPoint()), radius, radius);
+
+                double penWidth = 30;
+                double penRadius = Math.Abs(zeroPoint.X - matrix.Transform(new Point(penWidth, 0)).X);
+                //drawingContext.DrawEllipse(null, new Pen(brush, penWidth), matrix.Transform(spoint.location.toPoint()), radius, radius);
             }
 
             //now food
             lock(world.food)
-                for (int i = 0; i < world.food.Count; i++)
-                {
-                    Food f = world.food[i];
+                foreach (Food f in world.food.Values)
+                {                    
                     Point center = new Point(f.point.x, f.point.y);
                     center = matrix.Transform(center);
 
@@ -72,7 +148,7 @@ namespace Model
                 }
 
             //now zoas' view fields
-            foreach (Protozoa zoa in world.protozoas)
+            foreach (Protozoa zoa in world.protozoas.Values)
             {
                 StreamGeometry viewZoneGeometry = new StreamGeometry();
                 using (StreamGeometryContext ctx = viewZoneGeometry.Open())
@@ -96,7 +172,7 @@ namespace Model
             }
 
             //now zoas
-            foreach (Protozoa zoa in world.protozoas)
+            foreach (Protozoa zoa in world.protozoas.Values)
             {
                 Color color = zoa.zoaColor.toColor();
                 SolidColorBrush brush = new SolidColorBrush(color);
@@ -107,6 +183,6 @@ namespace Model
                 Point translatedCenter = matrix.Transform(zoa.centerP.toPoint());
                 drawingContext.DrawEllipse(brush, pen, translatedCenter, radius, radius);
             }
-        }
+        }*/
     }
 }

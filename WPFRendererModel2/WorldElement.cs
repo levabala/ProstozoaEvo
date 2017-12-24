@@ -20,7 +20,7 @@ namespace WPFRendererModel2
 
         WorldRenderer renderer;
         Matrix matrix;          
-        IInputElement container;
+        FrameworkElement container;
         double foodWidth = 5;
         double viewedSize = 6;
 
@@ -44,18 +44,22 @@ namespace WPFRendererModel2
             set { updateTimer.Interval = value; }
         }
 
-        public WorldElement(IInputElement parent)
+        public WorldElement(UIElement parent)
         {
-            container = parent;
+            container = (FrameworkElement)parent;            
             container.MouseWheel += On_MouseWheel;
             container.MouseMove += On_MouseMove;
-            container.MouseLeftButtonDown += On_MouseDown;            
+            container.MouseLeftButtonDown += On_MouseDown;
+
+
+            container.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            container.Arrange(new Rect(0, 0, container.DesiredSize.Width, container.DesiredSize.Height));
         }
 
         public void setWorldRenderer(WorldRenderer renderer)
         {
             this.renderer = renderer;            
-            container = (IInputElement)Parent;
+            //container = (UIElement)Parent;
             matrix = new Matrix();
             matrix.Translate(100, 100);
             matrix.Scale(3, 3);
@@ -73,7 +77,7 @@ namespace WPFRendererModel2
 
                 }
             };
-            updateTimer.Start();
+            updateTimer.Start();                        
         }
 
         private void On_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -115,7 +119,11 @@ namespace WPFRendererModel2
         {
             base.OnRender(drawingContext);
 
-            renderer.Render(drawingContext, matrix);
+            Matrix invMatrix = matrix;
+            invMatrix.Invert();
+            Point leftTopView = invMatrix.Transform(new Point(0, 0));
+            Point rightBottomView = invMatrix.Transform(new Point(container.ActualWidth, container.ActualHeight));
+            renderer.Render(drawingContext, matrix, leftTopView, rightBottomView);
         }
     }
 }

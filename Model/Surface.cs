@@ -78,12 +78,35 @@ namespace Model
             int x = rnd.Next((int)leftB - maxDistance, (int)rightB + maxDistance);
             int y = rnd.Next((int)topB - maxDistance, (int)bottomB + maxDistance);
             return new Pnt(x, y);
-        }        
+        }
+
+        public Pnt getRandomPointFromLast(Random rnd, int maxDistance)
+        {
+            if (sourcePoints.Count == 0)
+                return new Pnt(0, 0);
+
+            SourcePoint last = sourcePoints.Last();
+            int x = rnd.Next((int)last.location.x - maxDistance, (int)last.location.x + maxDistance);
+            int y = rnd.Next((int)last.location.y - maxDistance, (int)last.location.y + maxDistance);
+            return new Pnt(x, y);
+        }
     }
 
-    public struct Range
+    public class Range
     {
         public double from, to;
+        public Range()
+        {
+            from = Int32.MinValue;
+            to = Int32.MaxValue;
+        }
+
+        public Range(double from)
+        {
+            this.from = from;
+            to = Int32.MaxValue;
+        }
+
         public Range(double from, double to)
         {
             this.from = from;
@@ -102,7 +125,7 @@ namespace Model
 
     public struct SourcePoint
     {
-        public static Dictionary<SourceType, Range> ranges = new Dictionary<SourceType, Range>()
+        public static Dictionary<SourceType, Range> rangesStrength = new Dictionary<SourceType, Range>()
         {
             { SourceType.Fertility, new Range(0.001, 0.1) },
             { SourceType.Toxicity, new Range(0, 1) },
@@ -111,24 +134,36 @@ namespace Model
             { SourceType.Grass, new Range(0, 1) },
             { SourceType.Ocean, new Range(0, 1) },
         };
+        public static Dictionary<SourceType, Range> rangesDistance = new Dictionary<SourceType, Range>()
+        {
+            { SourceType.Fertility, new Range(200, 500) },
+            { SourceType.Toxicity, new Range(200, 500) },
+            { SourceType.Viscosity, new Range(200, 500) },
+            { SourceType.Fire, new Range(200, 600) },
+            { SourceType.Grass, new Range(200, 600) },
+            { SourceType.Ocean, new Range(200, 600) },
+        };
 
         public Pnt location;
         public SourceType sourceType;
-        public double strength;
+        public double strength, distance;
 
-        public SourcePoint(Pnt location, SourceType sourceType, double strength)
+        public SourcePoint(Pnt location, SourceType sourceType, double strength, double distance)
         {
             this.location = location;
             this.sourceType = sourceType;
-            this.strength = ranges[sourceType].toRange(strength);
+            this.strength = rangesStrength[sourceType].toRange(strength);
+            this.distance = rangesStrength[sourceType].toRange(distance);
         }
 
         public SourcePoint(Pnt location, SourceType sourceType, Random rnd)
         {
             this.location = location;
             this.sourceType = sourceType;
-            Range range = ranges[sourceType];
-            strength = rnd.NextDouble() * (range.to - range.from) + range.from;
+            Range rangeStrength = rangesStrength[sourceType];
+            Range rangeDistance= rangesDistance[sourceType];
+            strength = rnd.NextDouble() * (rangeStrength.to - rangeStrength.from) + rangeStrength.from;
+            distance = rnd.NextDouble() * (rangeDistance.to - rangeDistance.from) + rangeDistance.from;
         }
     }
 

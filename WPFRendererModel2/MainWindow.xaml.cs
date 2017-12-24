@@ -38,11 +38,27 @@ namespace WPFRendererModel2
 
             worldElement.setWorldRenderer(worldRenderer);
             mainCanvas.Children.Add(worldElement);
-
-            worldController.addSource(SourceType.Fertility, 10);
-            worldController.addSource(SourceType.Fire, 10);
-            worldController.addSource(SourceType.Grass, 10);
-            worldController.addSource(SourceType.Ocean, 10);
+                                    
+            worldController.addSource(SourceType.Fire, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Grass, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Ocean, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Fire, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Grass, 700);            
+            worldController.addSource(SourceType.Ocean, 700);
+            worldController.addSource(SourceType.Fire, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Grass, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Ocean, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Fire, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Grass, 700);
+            worldController.addSource(SourceType.Ocean, 700);
             /*worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();

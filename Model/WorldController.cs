@@ -50,7 +50,7 @@ namespace Model
 
         public void addSource(SourceType stype, double dist)
         {
-            SourcePoint spoint = new SourcePoint(world.surface.getRandomPoint(rnd, (int)dist), stype, rnd);
+            SourcePoint spoint = new SourcePoint(world.surface.getRandomPointFromLast(rnd, (int)dist), stype, rnd);
             world.surface.addSourcePoint(spoint);
         }
     }

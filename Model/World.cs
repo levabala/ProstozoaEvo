@@ -7,35 +7,61 @@ using System.Threading.Tasks;
 namespace Model
 {
     public class World
-    {
+    {        
         public long counter = 0;
         public double simSpeed = 1;
         public double maxSpeed = 100;
-        public double tickInterval = 0.001;
+        public double moveInterval, foodInterval, controlInterval, minInterval;
+        public double foodRate = 10;
+        public double controlRate = 10;        
         public double maxMoveLength = 10; //pixels        
 
         Random rnd = new Random();
-        public List<Protozoa> protozoas = new List<Protozoa>();
-        public List<Food> food = new List<Food>();
+        public SortedDictionary<long, Protozoa> protozoas = new SortedDictionary<long, Protozoa>();
+        public SortedDictionary<long, Food> food = new SortedDictionary<long, Food>();
         public Surface surface = new Surface();
+        public DynamicPointsManager pointsManager = new DynamicPointsManager(new Pnt(0, 0), 100);
 
         public World()
         {
-            tickInterval = maxMoveLength / maxSpeed;
+            moveInterval = maxMoveLength / maxSpeed;
+            foodInterval = moveInterval * foodRate;
+            controlInterval = moveInterval * controlRate;
+            minInterval = Math.Min(moveInterval, Math.Min(foodInterval, controlInterval));
         }
 
         public void WorldTick(double time)
         {
-            while (time > tickInterval)
+            double foodTime, controlTime, moveTime;
+            foodTime = controlTime = moveTime = time;
+            /*while (foodTime + controlTime + moveTime >= minInterval)
             {
-                FoodTick(tickInterval);
-                ControlTick(tickInterval);
-                MoveTick(tickInterval);
-                time -= tickInterval;
+                if (foodTime > foodInterval)
+                {
+                    FoodTick(foodInterval);
+                    foodTime -= foodInterval;
+                }
+                if (controlTime > controlInterval)
+                {
+                    ControlTick(controlInterval);
+                    controlTime -= controlInterval;
+                }
+                if (moveTime > moveInterval)
+                {
+                    MoveTick(moveInterval);
+                    moveTime -= moveInterval;
+                }                                                
+            }*/
+            while (time > minInterval)
+            {
+                FoodTick(minInterval);
+                ControlTick(minInterval);
+                MoveTick(minInterval);
+                time -= minInterval;
             }
-            FoodTick(time);
-            ControlTick(time);
-            MoveTick(time);
+            FoodTick(minInterval);
+            ControlTick(minInterval);
+            MoveTick(minInterval);
         }
 
         public double multipleTime(double time)
@@ -47,13 +73,13 @@ namespace Model
         {
             //let's move everybody
             lock (protozoas)
-                foreach (Protozoa zoa in protozoas)
+                foreach (Protozoa zoa in protozoas.Values)
                     moveZoa(zoa, time);
         }
 
         private void moveZoa(Protozoa zoa, double time)
         {
-            double viscosity = surface.getEffectAtPoint(zoa.centerP, SourceType.Viscosity);
+            double viscosity = surface.getEffectAtPoint(zoa.centerP, SourceType.Viscosity);            
             zoa.move(viscosity, time);
         }
 
@@ -63,14 +89,31 @@ namespace Model
             lock (protozoas) {
                 List<long> killedZoas = new List<long>();
                 List<Protozoa> newZoas = new List<Protozoa>();
-                foreach (Protozoa zoa in protozoas)
+                foreach (Protozoa zoa in protozoas.Values)
                 {
                     if (killedZoas.Contains(zoa.id))
                         continue;                    
 
                     //control internal processes
                     double toxicity = surface.getEffectAtPoint(zoa.centerP, SourceType.Toxicity);
-                    zoa.controlByViewField(protozoas, food, time);
+                    DinamicPoint[] nearObjectsIds = pointsManager.getNeighbors(zoa.id);
+                    List<Protozoa> nearZoas = new List<Protozoa>();
+                    List<Food> nearFood = new List<Food>();
+                    for (int i = 0; i < nearObjectsIds.Length; i++)
+                    {
+                        DinamicPoint point = nearObjectsIds[i];
+                        switch (point.type)
+                        {
+                            case ZoaType:
+                                nearZoas.Add(protozoas[point.id]);
+                                break;
+                            case FoodType:
+                                nearFood.Add(food[point.id]);
+                                break;
+                        }                        
+                    }
+
+                    zoa.controlByViewField(nearZoas.ToArray(), nearFood.ToArray(), time);
                     zoa.controlEnergy(toxicity);
 
                     //go down cooldown
@@ -81,22 +124,21 @@ namespace Model
 
                     //control interacting
                     //with food                   
-                    int eatFIndex = -1;
-                    Parallel.For(0, food.Count, i =>
-                    {                        
-                        Food f = food[i];
-
+                    long eatFIndex = -1;
+                    Parallel.ForEach(food, pair => 
+                    {
+                        Food f = pair.Value;
                         InteractResult res = zoa.interactWithFood(f);
                         if (res == InteractResult.Eat)                                                    
-                            eatFIndex = i;                                                    
+                            eatFIndex = f.id;                                                    
                     });
 
                     if (eatFIndex != -1)
-                        food.RemoveAt(eatFIndex);
+                        food.Remove(eatFIndex);
 
                     //with other zoas  
                     continue;
-                    foreach (Protozoa otherZoa in protozoas)
+                    foreach (Protozoa otherZoa in protozoas.Values)
                     {
                         double dist = Vector.GetLength(zoa.centerP, otherZoa.centerP);
                         if (dist > otherZoa.radius + zoa.radius || otherZoa.radius > zoa.radius || killedZoas.Contains(otherZoa.id) || otherZoa.id == zoa.id)
@@ -116,7 +158,7 @@ namespace Model
                 }
                 
                 foreach (long id in killedZoas)
-                    protozoas.RemoveAt(protozoas.FindIndex(z => { return z.id == id; }));
+                    protozoas.Remove(id);
                 foreach (Protozoa zoa in newZoas)
                     addZoa(zoa);
             }
@@ -125,34 +167,41 @@ namespace Model
         long ff = 0;        
         public void FoodTick(double time)
         {
-            double step = 5;
-            foreach (SourcePoint spoint in surface.sourcePoints)
+            lock (food)
             {
-                double dist = step;
-                double rate = (1 / dist) * spoint.strength * time;
-                double seed = rnd.NextDouble();
-                bool toSpawn = seed < rate;
-                while (dist < 500)
+                double step = 1;
+                foreach (SourcePoint spoint in surface.sourcePoints)
                 {
-                    if (seed < (1 / Math.Sqrt(dist)) * 0.001 * time)
+                    if (spoint.sourceType != SourceType.Fertility)
+                        continue;
+
+                    double dist = 10;
+                    double rate = (1 / dist) * spoint.strength * time;
+                    double strenght = 0.0001;
+                    double seed = rnd.NextDouble();
+                    bool toSpawn = seed < rate;
+                    while (dist < spoint.distance)
                     {
-                        double alpha = rnd.NextDouble() * Math.PI * 2;
-                        Pnt foodPoint = Vector.GetEndPoint(spoint.location, alpha, dist);
-                        double fire = surface.getEffectAtPoint(foodPoint, SourceType.Fire);
-                        double grass = surface.getEffectAtPoint(foodPoint, SourceType.Grass);
-                        double ocean = surface.getEffectAtPoint(foodPoint, SourceType.Ocean);
-                        double toxicity = surface.getEffectAtPoint(foodPoint, SourceType.Toxicity);
-                        Food f = new Food(foodPoint, fire, grass, ocean, toxicity);
-                        food.Add(f);
+                        if (seed < (1 / (Math.Sqrt(dist))) * strenght * time)
+                        {
+                            double alpha = rnd.NextDouble() * Math.PI * 2;
+                            Pnt foodPoint = Vector.GetEndPoint(spoint.location, alpha, dist);
+                            double fire = surface.getEffectAtPoint(foodPoint, SourceType.Fire);
+                            double grass = surface.getEffectAtPoint(foodPoint, SourceType.Grass);
+                            double ocean = surface.getEffectAtPoint(foodPoint, SourceType.Ocean);
+                            double toxicity = surface.getEffectAtPoint(foodPoint, SourceType.Toxicity);
+                            Food f = new Food(foodPoint, fire, grass, ocean, toxicity);
+                            addFood(f);
 
-                        Console.WriteLine(ff);
-                        ff = 0;
+                            ff = 0;
+                            strenght /= 2;
+                        }
+                        else ff++;
+
+                        seed = rnd.NextDouble();
+                        dist += step;
+                        rate = (1 / dist) * spoint.strength * time;
                     }
-                    else ff++;
-
-                    seed = rnd.NextDouble();
-                    dist += step;
-                    rate = (1 / dist) * spoint.strength * time;                    
                 }
             }
         }
@@ -160,13 +209,25 @@ namespace Model
         public void addZoa(Protozoa zoa)
         {
             zoa.id = counter;
-            protozoas.Add(zoa);
+            protozoas.Add(zoa.id, zoa);
+            pointsManager.addPoint(zoa.centerP, zoa.viewDepth * zoa.radius, zoa.id, ZoaType);
+            counter++;
+        }
+        
+        public void addFood(Food f)
+        {
+            f.id = counter;
+            food.Add(f.id, f);
+            pointsManager.addStaticPoint(f.point, f.id, FoodType);
             counter++;
         }
 
         public void addZoa(int distance)
         {
             addZoa(new Protozoa(rnd, surface.getRandomPoint(rnd, distance)));
-        }        
+        }
+
+        public const int ZoaType = 0;
+        public const int FoodType = 1;
     }
 }

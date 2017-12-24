@@ -8,11 +8,13 @@ namespace Model
 {
     public struct Food
     {
+        public long id;
         public double fire, grass, ocean, fireRate, grassRate, oceanRate, toxicity;
         public Pnt point;
 
-        public Food(Pnt point, double fire, double grass, double ocean, double toxicity)
+        public Food(Pnt point, double fire, double grass, double ocean, double toxicity, long id = 0)
         {
+            this.id = id;
             this.point = point;
             this.toxicity = toxicity;
             this.fire = fire;

@@ -81,7 +81,7 @@ namespace Model
                 fetus.centerP = centerP;
         }                
 
-        public void controlByViewField(List<Protozoa> zoas, List<Food> food, double time)
+        public void controlByViewField(Protozoa[] zoas, Food[] food, double time)
         {
             calcViewEdges();
 
