@@ -70,7 +70,9 @@ namespace WPFRendererModel2
             {
                 try
                 {
+                    updateTimer.Stop();
                     Parent.Dispatcher.Invoke(InvalidateVisual);
+                    updateTimer.Start();
                 }
                 catch (Exception e)
                 {

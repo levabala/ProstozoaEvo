@@ -8,8 +8,8 @@ namespace Model
 {
     public class Surface
     {
-        public List<SourcePoint> sourcePoints = new List<SourcePoint>();
-        double leftB, topB, rightB, bottomB;
+        public SortedDictionary<long, SourcePoint> sourcePoints = new SortedDictionary<long, SourcePoint>();
+        double leftB, topB, rightB, bottomB;        
 
         public Surface()
         {
@@ -17,8 +17,8 @@ namespace Model
         }
 
         public void addSourcePoint(SourcePoint spoint)
-        {
-            sourcePoints.Add(spoint);
+        {            
+            sourcePoints.Add(spoint.id, spoint);
             if (sourcePoints.Count == 1)
             {
                 leftB = rightB = spoint.location.x;
@@ -43,7 +43,7 @@ namespace Model
             foreach (SourceType stype in possibleTypes)
                 output[stype] = 0;
 
-            foreach (SourcePoint sp in sourcePoints)
+            foreach (SourcePoint sp in sourcePoints.Values)
             {
                 double dist = Vector.GetLength(point, sp.location);
                 if (dist == 0)
@@ -57,7 +57,7 @@ namespace Model
         public double getEffectAtPoint(Pnt point, SourceType stype)
         {
             double effect = 0;
-            foreach (SourcePoint sp in sourcePoints)
+            foreach (SourcePoint sp in sourcePoints.Values)
             {
                 if (sp.sourceType != stype)
                     continue;
@@ -85,7 +85,7 @@ namespace Model
             if (sourcePoints.Count == 0)
                 return new Pnt(0, 0);
 
-            SourcePoint last = sourcePoints.Last();
+            SourcePoint last = sourcePoints.Values.Last();
             int x = rnd.Next((int)last.location.x - maxDistance, (int)last.location.x + maxDistance);
             int y = rnd.Next((int)last.location.y - maxDistance, (int)last.location.y + maxDistance);
             return new Pnt(x, y);
@@ -127,7 +127,7 @@ namespace Model
     {
         public static Dictionary<SourceType, Range> rangesStrength = new Dictionary<SourceType, Range>()
         {
-            { SourceType.Fertility, new Range(0.001, 0.1) },
+            { SourceType.Fertility, new Range(1, 1) },//new Range(0.001, 0.01) },
             { SourceType.Toxicity, new Range(0, 1) },
             { SourceType.Viscosity, new Range(0, 1) },
             { SourceType.Fire, new Range(0, 1) },
@@ -147,17 +147,20 @@ namespace Model
         public Pnt location;
         public SourceType sourceType;
         public double strength, distance;
+        public long id;
 
-        public SourcePoint(Pnt location, SourceType sourceType, double strength, double distance)
+        public SourcePoint(Pnt location, SourceType sourceType, double strength, double distance, long id = 0)
         {
+            this.id = id;
             this.location = location;
             this.sourceType = sourceType;
             this.strength = rangesStrength[sourceType].toRange(strength);
             this.distance = rangesStrength[sourceType].toRange(distance);
         }
 
-        public SourcePoint(Pnt location, SourceType sourceType, Random rnd)
+        public SourcePoint(Pnt location, SourceType sourceType, Random rnd, long id = 0)
         {
+            this.id = id;
             this.location = location;
             this.sourceType = sourceType;
             Range rangeStrength = rangesStrength[sourceType];

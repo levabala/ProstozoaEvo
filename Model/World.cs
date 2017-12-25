@@ -18,9 +18,9 @@ namespace Model
 
         Random rnd = new Random();
         public SortedDictionary<long, Protozoa> protozoas = new SortedDictionary<long, Protozoa>();
-        public SortedDictionary<long, Food> food = new SortedDictionary<long, Food>();
-        public Surface surface = new Surface();
+        public SortedDictionary<long, Food> food = new SortedDictionary<long, Food>();        
         public DynamicPointsManager pointsManager = new DynamicPointsManager(new Pnt(0, 0), 100);
+        public Surface surface = new Surface();
 
         public World()
         {
@@ -169,15 +169,15 @@ namespace Model
         {
             lock (food)
             {
-                double step = 1;
-                foreach (SourcePoint spoint in surface.sourcePoints)
+                double step = 4;
+                foreach (SourcePoint spoint in surface.sourcePoints.Values)
                 {
                     if (spoint.sourceType != SourceType.Fertility)
                         continue;
 
                     double dist = 10;
-                    double rate = (1 / dist) * spoint.strength * time;
-                    double strenght = 0.0001;
+                    double rate = (1 / (Math.Sqrt(dist))) * spoint.strength * time;
+                    double strenght = spoint.strength;
                     double seed = rnd.NextDouble();
                     bool toSpawn = seed < rate;
                     while (dist < spoint.distance)
@@ -227,7 +227,16 @@ namespace Model
             addZoa(new Protozoa(rnd, surface.getRandomPoint(rnd, distance)));
         }
 
+        public void addSourcePoint(SourcePoint sourcePoint)
+        {
+            sourcePoint.id = counter;
+            counter++;
+            surface.addSourcePoint(sourcePoint);
+            pointsManager.addStaticPoint(sourcePoint.location, sourcePoint.id, SourcePointType);
+        }
+
         public const int ZoaType = 0;
         public const int FoodType = 1;
+        public const int SourcePointType = 2;
     }
 }

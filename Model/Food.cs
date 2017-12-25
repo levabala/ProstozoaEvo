@@ -9,10 +9,10 @@ namespace Model
     public struct Food
     {
         public long id;
-        public double fire, grass, ocean, fireRate, grassRate, oceanRate, toxicity;
+        public double fire, grass, ocean, fireRate, grassRate, oceanRate, toxicity, size;
         public Pnt point;
 
-        public Food(Pnt point, double fire, double grass, double ocean, double toxicity, long id = 0)
+        public Food(Pnt point, double fire, double grass, double ocean, double toxicity, long id = 0, double size = 1)
         {
             this.id = id;
             this.point = point;
@@ -20,6 +20,7 @@ namespace Model
             this.fire = fire;
             this.grass = grass;
             this.ocean = ocean;
+            this.size = size;
             double sum = fire + grass + ocean;
             fireRate = fire / sum;
             grassRate = grass / sum;

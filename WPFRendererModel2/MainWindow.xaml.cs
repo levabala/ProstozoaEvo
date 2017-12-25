@@ -41,7 +41,7 @@ namespace WPFRendererModel2
                                     
             worldController.addSource(SourceType.Fire, 700);
             worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Grass, 700);
+            /*worldController.addSource(SourceType.Grass, 700);
             worldController.addSource(SourceType.Fertility, 100);
             worldController.addSource(SourceType.Ocean, 700);
             worldController.addSource(SourceType.Fertility, 100);
@@ -58,7 +58,25 @@ namespace WPFRendererModel2
             worldController.addSource(SourceType.Fire, 700);
             worldController.addSource(SourceType.Fertility, 100);
             worldController.addSource(SourceType.Grass, 700);
+            worldController.addSource(SourceType.Fire, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Grass, 700);
+            worldController.addSource(SourceType.Fertility, 100);
             worldController.addSource(SourceType.Ocean, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Fire, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Grass, 700);
+            worldController.addSource(SourceType.Ocean, 700);
+            worldController.addSource(SourceType.Fire, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Grass, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Ocean, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Fire, 700);
+            worldController.addSource(SourceType.Fertility, 100);
+            worldController.addSource(SourceType.Grass, 700);*/
             /*worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();
