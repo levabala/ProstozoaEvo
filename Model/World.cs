@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 namespace Model
 {
     public class World
-    {        
+    {
+        public object tickLocker = new object();        
+
         public long counter = 0;
         public double simSpeed = 1;
         public double maxSpeed = 100;
@@ -17,8 +19,8 @@ namespace Model
         public double maxMoveLength = 10; //pixels        
 
         Random rnd = new Random();
-        public SortedDictionary<long, Protozoa> protozoas = new SortedDictionary<long, Protozoa>();
-        public SortedDictionary<long, Food> food = new SortedDictionary<long, Food>();        
+        public Dictionary<long, Protozoa> protozoas = new Dictionary<long, Protozoa>();
+        public Dictionary<long, Food> food = new Dictionary<long, Food>();        
         public DynamicPointsManager pointsManager = new DynamicPointsManager(new Pnt(0, 0), 100);
         public Surface surface = new Surface();
 
@@ -32,36 +34,39 @@ namespace Model
 
         public void WorldTick(double time)
         {
-            double foodTime, controlTime, moveTime;
-            foodTime = controlTime = moveTime = time;
-            /*while (foodTime + controlTime + moveTime >= minInterval)
+            lock (tickLocker)
             {
-                if (foodTime > foodInterval)
+                double foodTime, controlTime, moveTime;
+                foodTime = controlTime = moveTime = time;
+                /*while (foodTime + controlTime + moveTime >= minInterval)
                 {
-                    FoodTick(foodInterval);
-                    foodTime -= foodInterval;
+                    if (foodTime > foodInterval)
+                    {
+                        FoodTick(foodInterval);
+                        foodTime -= foodInterval;
+                    }
+                    if (controlTime > controlInterval)
+                    {
+                        ControlTick(controlInterval);
+                        controlTime -= controlInterval;
+                    }
+                    if (moveTime > moveInterval)
+                    {
+                        MoveTick(moveInterval);
+                        moveTime -= moveInterval;
+                    }                                                
+                }*/
+                while (time > minInterval)
+                {
+                    FoodTick(minInterval);
+                    ControlTick(minInterval);
+                    MoveTick(minInterval);
+                    time -= minInterval;
                 }
-                if (controlTime > controlInterval)
-                {
-                    ControlTick(controlInterval);
-                    controlTime -= controlInterval;
-                }
-                if (moveTime > moveInterval)
-                {
-                    MoveTick(moveInterval);
-                    moveTime -= moveInterval;
-                }                                                
-            }*/
-            while (time > minInterval)
-            {
                 FoodTick(minInterval);
                 ControlTick(minInterval);
                 MoveTick(minInterval);
-                time -= minInterval;
             }
-            FoodTick(minInterval);
-            ControlTick(minInterval);
-            MoveTick(minInterval);
         }
 
         public double multipleTime(double time)
@@ -169,7 +174,7 @@ namespace Model
         {
             lock (food)
             {
-                double step = 4;
+                double step = 10;
                 foreach (SourcePoint spoint in surface.sourcePoints.Values)
                 {
                     if (spoint.sourceType != SourceType.Fertility)

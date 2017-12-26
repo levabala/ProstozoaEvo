@@ -9,7 +9,7 @@ using System.Timers;
 namespace Model
 {
     public class WorldController
-    {
+    {        
         Random rnd = new Random();
 
         World world;
@@ -20,10 +20,10 @@ namespace Model
         {
             this.world = world;
             timer.Elapsed += (a, b) =>
-            {
+            {                
                 sw.Stop();
                 timer.Stop();
-                //Console.WriteLine("WorldTick Start");
+                //Console.WriteLine("WorldTick Start");                
                 world.WorldTick(world.multipleTime(sw.ElapsedMilliseconds));
                 //Console.WriteLine("WorldTick End");
                 timer.Start();

@@ -16,7 +16,7 @@ namespace Model
         public Cluster zeroCluster;
 
         //debug
-        public int li, ri, ti, bi;
+        public int li, ri, ti, bi, minLayerId;
 
         int clustersLeft, clustersRight, clustersTop, clustersBottom;
         public DynamicPointsManager(Pnt zeroPoint, double clusterSize)
@@ -30,16 +30,14 @@ namespace Model
 
         public void addPoint(Pnt point, double interactRadius, long id, int type)
         {
-            DinamicPoint p = new DinamicPoint(point.x, point.y, interactRadius, id, type);
-            p.clusters = new Cluster[] { zeroCluster, zeroCluster, zeroCluster, zeroCluster };
+            DinamicPoint p = new DinamicPoint(point.x, point.y, interactRadius, id, type);            
             updatePoint(p);
             points[id] = p;
         }
 
         public void addStaticPoint(Pnt point, long id, int type)
         {
-            DinamicPoint p = new DinamicPoint(point.x, point.y, 0, id, type, true);
-            p.clusters = new Cluster[] { zeroCluster, zeroCluster, zeroCluster, zeroCluster };
+            DinamicPoint p = new DinamicPoint(point.x, point.y, 0, id, type, true);            
             updatePoint(p);
             points[id] = p;
         }
@@ -94,15 +92,22 @@ namespace Model
                 ri = clusters.GetLength(0) - 1;
             if (bi > clusters.GetLength(1) - 1)
                 bi = clusters.GetLength(1) - 1;
-            int clustersLeft = ri + bi - li - ti + 1;            
+            int clustersLeft = ri + bi - li - ti + 1;
+            int minLayerId = 0;            
+            //Cluster[,] clustersIn = new Cluster[ri - li + 1, bi - ti + 1];
             for (int idX = li; idX <= ri; idX++)
                 for (int idY = ti; idY <= bi; idY++)
                 {                    
                     int pointsPerCluster = (maxPointsCount - output.Count) / clustersLeft;
                     if (pointsPerCluster < 1)
                         pointsPerCluster = 1;
-                    output.AddRange(clusters[idX, idY].getPointSets(pointsPerCluster));
+                    minLayerId = Math.Max(minLayerId, clusters[idX, idY].getLayerId(pointsPerCluster));
+                    maxPointsCount -= clusters[idX, idY].layers[minLayerId].sets.Count;
                 }
+            for (int idX = li; idX <= ri; idX++)
+                for (int idY = ti; idY <= bi; idY++)                                    
+                    output.AddRange(clusters[idX, idY].layers[minLayerId].sets);
+            this.minLayerId = minLayerId;
             return output.ToArray(); ;
         }
 
@@ -283,8 +288,6 @@ namespace Model
             if (clusterCrossed)
                 updatePoint(point);
         }
-
-
     }
 
     public class Cluster
@@ -293,35 +296,40 @@ namespace Model
         public Layer[] layers;        
         public int idX, idY;
         public double x, y, size;
-        public Cluster(double x, double y, double size, int idX, int idY, int layersCount = 5)
+        public Cluster(double x, double y, double size, int idX, int idY, int layersCount = 100)
         {
             this.x = x;
             this.y = y;
             this.idX = idX;
             this.idY = idY;
             this.size = size;
-            layers = new Layer[layersCount];            
-            double dist = size / 3;
-            for (int i = layersCount - 1; i >= 0; i--)
-            {                                
-                layers[i] = new Layer(i, dist);
-                dist /= 2;
-            }
+            layers = new Layer[layersCount];
+            double joinStep = size / layersCount;            
+            //for (int i = layersCount - 1; i >= 0; i--)
+            for (int i = 0; i < layers.Length; i++)                                          
+                layers[i] = new Layer(i, joinStep * (i + 1));                            
         }
 
         private void addPointToLayer(DinamicPoint point, int layer)
         {
             Layer currLayer = layers[layer];
-            bool nextAdd = currLayer.addPoint(point);
-            if (nextAdd && layer != layers.Length - 1)
-                addPointToLayer(point, layer + 1);
+            bool nextAdd = currLayer.addPoint(point);            
         }
 
         public void addPoint(DinamicPoint point)
         {
             if (!points.ContainsKey(point.id))
-                addPointToLayer(point, 0);
+                foreach (Layer layer in layers)
+                    layer.addPoint(point);
             points[point.id] = point;            
+        }
+
+        public int getLayerId(int maxPointsCount)
+        {
+            for (int i = 0; i < layers.Length; i++)
+                if (layers[i].sets.Count <= maxPointsCount)
+                    return i;
+            return layers.Length - 1;
         }
 
         public void removePoint(long id)
@@ -334,7 +342,7 @@ namespace Model
             for (int i = 0; i < layers.Length; i++)
                 if (layers[i].sets.Count <= maxCount)
                     return layers[i].sets.ToArray();
-            return new DinamicPointsSet[0];
+            return layers.Last().sets.ToArray();
         }
     }
 
@@ -345,6 +353,7 @@ namespace Model
         public double joinDist = 0;
         public List<DinamicPointsSet> sets = new List<DinamicPointsSet>();
         public Layer(int layerId, double joinDist) { this.layerId = layerId; this.joinDist = joinDist; }
+
         public bool addPoint(DinamicPoint point)
         {
             pointsCount++;
@@ -361,8 +370,28 @@ namespace Model
                     return pointsCount % (layerId + 2) == 0;
                 }
             }
-            DinamicPointsSet newSet = new DinamicPointsSet(point);
+            DinamicPointsSet newSet = new DinamicPointsSet(point, joinDist);
             sets.Add(newSet);
+            return pointsCount % (layerId + 2) == 0;
+        }
+
+        public bool addSet(DinamicPointsSet inSet)
+        {
+            pointsCount++;
+            foreach (DinamicPointsSet set in sets)
+            {
+                if (set.type != inSet.type)
+                    continue;
+                double dx = inSet.x - set.x;
+                double dy = inSet.y - set.y;
+                double dist = Math.Sqrt(dx * dx + dy * dy);
+                if (dist <= joinDist)
+                {
+                    set.addSet(inSet, dx, dy);
+                    return pointsCount % (layerId + 2) == 0;
+                }
+            }            
+            sets.Add(inSet);
             return pointsCount % (layerId + 2) == 0;
         }
     }
@@ -371,9 +400,11 @@ namespace Model
     {
         public double x, y;
         public int type;
+        public double joinDist;
         public List<DinamicPoint> points = new List<DinamicPoint>();
-        public DinamicPointsSet(DinamicPoint point)
+        public DinamicPointsSet(DinamicPoint point, double joinDist)
         {
+            this.joinDist = joinDist;
             x = point.x;
             y = point.y;
             type = point.type;
@@ -385,6 +416,17 @@ namespace Model
             double weight = points.Count;
             x += (point.x - x) / weight;
             y += (point.y - y) / weight;
+            points.Add(point);
+        }
+
+        public void addSet(DinamicPointsSet set, double dx, double dy)
+        {
+            double w1 = points.Count;
+            double w2 = set.points.Count;
+            double coeff = w2 / (w2 + w1);
+            x += coeff * dx;
+            y += coeff * dy;
+            points.AddRange(set.points);
         }
 
         public void addPoint(DinamicPoint point, double dx, double dy)
@@ -404,7 +446,7 @@ namespace Model
         public int type;
         public double interactRadius;
         public bool isFreezed;
-        public Cluster[] clusters = new Cluster[4];        
+        public Cluster[] clusters;       
         public DinamicPoint(double x, double y, double interactRadius, long id, int type, bool isFreezed = false)
         {
             this.x = x;
@@ -450,7 +492,16 @@ namespace Model
             {
                 lp, rp, tp, bp
             };
-            for (int i = 0; i < clusters.Length; i++)
+
+            if (clusters == null)
+            {
+                foreach (Cluster c in newClusters)
+                    c.addPoint(this);
+                clusters = newClusters;
+                return;
+            }
+
+            for (int i = 0; i < clusters.Length; i++)                
                 if (clusters[i].idX != newClusters[i].idX || clusters[i].idY != newClusters[i].idY)
                 {
                     clusters[i].removePoint(id);

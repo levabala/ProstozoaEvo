@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -14,12 +15,11 @@ namespace Model
         public World world;
 
         public double foodScale = 3;
+        public double foodMaxDensity = Math.Pow(3, 3);
         public double zoaScale = 1;
         public double surfaceOpacity = 0.5;
 
-        public int maxFoodRendered = 1000;
-        public int maxZoasRendered = 500;
-        public int maxSourcesRendered = 100;
+        public int maxPartiesRendered = 1000;
 
         public Dictionary<SourceType, double> sourcesCoeffs = new Dictionary<SourceType, double>()
         {
@@ -47,13 +47,18 @@ namespace Model
             this.world = world;            
         }
 
+        Stopwatch renderWatch = new Stopwatch();
         public void Render(DrawingContext drawingContext, Matrix matrix, Point leftTopView, Point rightBottomView)
         {
-            Point zeroPoint = matrix.Transform(new Point(0, 0));                                    
+            renderWatch.Restart();
+            Point zeroPoint = matrix.Transform(new Point(0, 0));            
             Action drawAll = new Action(() =>
             {
                 DinamicPoint[] elementsToDraw = world.pointsManager.getPoints(leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y);
-                DinamicPointsSet[] setsToDraw = world.pointsManager.getPointsSets(leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y, maxFoodRendered + maxZoasRendered);
+                DinamicPointsSet[] setsToDraw = 
+                    world.pointsManager.getPointsSets(
+                        leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y,
+                        maxPartiesRendered);
                 //DinamicPoint[] elementsToDraw = world.pointsManager.getPointsByIdBorders(0, 50, 0, 5);
                 int clustersDrawed = 0;
                 foreach (Cluster c in world.pointsManager.clusters)
@@ -69,11 +74,11 @@ namespace Model
                     {
                         brush = Brushes.Red;
                         clustersDrawed++;
-                        drawingContext.DrawRectangle(null, new Pen(brush, 1), new Rect(edges[0], edges[1]));
+                        //drawingContext.DrawRectangle(null, new Pen(brush, 1), new Rect(edges[0], edges[1]));
                     }
                 }        
 
-                List<Food> allFoodToDraw = new List<Food>();
+                List<FoodDraw> allFoodToDraw = new List<FoodDraw>();
                 List<Protozoa> allZoasToDraw = new List<Protozoa>();
                 List<SourcePoint> allSourcePointsToDraw = new List<SourcePoint>(world.surface.sourcePoints.Values);
                 /*foreach (DinamicPoint p in elementsToDraw)
@@ -93,7 +98,12 @@ namespace Model
                             //allZoasToDraw.Add(world.protozoas[p.id]);
                             break;
                         case World.FoodType:
-                            int size = set.points.Count;
+                            double size = set.joinDist / 2;
+                            double alpha =
+                                (foodScale * foodScale * set.points.Count) / //total food area 
+                                (Math.PI * (set.joinDist / 2) * (set.joinDist / 2));
+                            if (alpha > 1)
+                                alpha = 1;
                             double fire = 0;
                             double grass = 0;
                             double ocean = 0;
@@ -108,10 +118,10 @@ namespace Model
                             }
                             toxicity /= set.points.Count;
                             Food joinedFood = new Food(new Pnt(set.x, set.y), fire, grass, ocean, toxicity, 0, size);
-                            allFoodToDraw.Add(joinedFood);
+                            allFoodToDraw.Add(new FoodDraw(joinedFood, alpha));
                             break;
                     }
-                List<Food> foodToDraw = new List<Food>(allFoodToDraw);
+                List<FoodDraw> foodToDraw = new List<FoodDraw>(allFoodToDraw);
                 List<Protozoa> zoasToDraw = new List<Protozoa>();
                 List<SourcePoint> sourcePointsToDraw = new List<SourcePoint>();
                 /*double foodStep = (double)maxFoodRendered / allFoodToDraw.Count;
@@ -157,35 +167,55 @@ namespace Model
                     //drawingContext.DrawEllipse(null, new Pen(new SolidColorBrush(Colors.Black) { Opacity = 0.3 }, 1), matrix.Transform(spoint.location.toPoint()), radius, radius);
                 }
 
-                //now food                                
-                foreach (Food f in foodToDraw)
+                //now food                  
+                foreach (FoodDraw f in foodToDraw)
                 {
-
-                    Point center = new Point(f.point.x - f.size * foodScale / 2, f.point.y - f.size * foodScale / 2);
+                    /*double coeff = (f.size / foodMaxDensity);
+                    if (coeff > 1)
+                        coeff = 1;*/
+                    double radius = f.f.size;// (coeff + 1) * foodScale;
+                    Point center = new Point(f.f.point.x - radius, f.f.point.y - radius);
                     center = matrix.Transform(center);
 
                     double zeroX = matrix.Transform(new Point(0, 0)).X;
-                    double width = Math.Abs(zeroX - matrix.Transform(new Point(f.size * foodScale, 0)).X);
+                    double width = Math.Abs(zeroX - matrix.Transform(new Point(radius * 2, 0)).X);
 
-                    Pen pen = new Pen(Brushes.Black, 1);
-                    SolidColorBrush brush = new SolidColorBrush(Color.FromRgb((byte)(f.fireRate * 255), (byte)(f.grassRate * 255), (byte)(f.oceanRate * 255)));
+                    Pen pen = new Pen(Brushes.Black, 1);                   
+                    SolidColorBrush brush = new SolidColorBrush(
+                        Color.FromArgb(
+                            (byte)(f.alpha * 255),//coeff * 255),
+                            (byte)(f.f.fireRate * 255), 
+                            (byte)(f.f.grassRate * 255), 
+                            (byte)(f.f.oceanRate * 255)));
                     drawingContext.DrawRectangle(brush, null, new Rect(center, new Size(width, width)));
                 }
-
+                
                 Window mainWindow = Application.Current.Windows[0];
                 mainWindow.Title = String.Format(
-                    "ClustersDrawed: {0}/{1}, ZoaDrawed: {2}/{3}, FoodDrawed: {4}/{5}, SourcePointsDrawed: {6}/{7}", 
+                    "ClustersDrawed: {0}/{1}, ZoaDrawed: {2}/{3}, FoodDrawed: {4}/{5}, " +
+                    "SourcePointsDrawed: {6}/{7}, MaxParties: {8}, MinLayerId: {9}, RenderTime: {10}ms", 
                     clustersDrawed, world.pointsManager.clusters.Length,
                     zoasToDraw.Count, world.protozoas.Count,
                     foodToDraw.Count, world.food.Count,
-                    sourcePointsToDraw.Count, world.surface.sourcePoints.Count);
+                    sourcePointsToDraw.Count, world.surface.sourcePoints.Count,
+                    maxPartiesRendered,
+                    world.pointsManager.minLayerId,
+                    renderWatch.ElapsedMilliseconds);
             });
 
-            lock (world.surface)
-                lock (world.food)
-                    lock (world.protozoas)
-                        lock (world.pointsManager)
-                            drawAll();            
+            lock (world.tickLocker)
+                drawAll();            
+        }
+
+        private struct FoodDraw
+        {
+            public double alpha;
+            public Food f;
+            public FoodDraw(Food f, double alpha)
+            {
+                this.alpha = alpha;
+                this.f = f;
+            }
         }
 
         //without-clustering render
@@ -260,5 +290,5 @@ namespace Model
                 drawingContext.DrawEllipse(brush, pen, translatedCenter, radius, radius);
             }
         }*/
-    }
+    }    
 }

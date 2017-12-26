@@ -36,14 +36,27 @@ namespace WPFRendererModel2
             WorldElement worldElement = new WorldElement(mainCanvas);
             WorldController worldController = new WorldController(world);
 
+            myWindow.KeyUp += (a, b) =>
+            {
+                switch (b.Key)
+                {
+                    case Key.OemPlus:
+                        worldRenderer.maxPartiesRendered = (int)(worldRenderer.maxPartiesRendered * 1.5);
+                        break;                   
+                    case Key.OemMinus:
+                        worldRenderer.maxPartiesRendered = (int)(worldRenderer.maxPartiesRendered / 1.5);
+                        break;
+                }
+            };
+
             worldElement.setWorldRenderer(worldRenderer);
             mainCanvas.Children.Add(worldElement);
                                     
             worldController.addSource(SourceType.Fire, 700);
             worldController.addSource(SourceType.Fertility, 100);
-            /*worldController.addSource(SourceType.Grass, 700);
+            worldController.addSource(SourceType.Grass, 700);
             worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Ocean, 700);
+            /*worldController.addSource(SourceType.Ocean, 700);
             worldController.addSource(SourceType.Fertility, 100);
             worldController.addSource(SourceType.Fire, 700);
             worldController.addSource(SourceType.Fertility, 100);

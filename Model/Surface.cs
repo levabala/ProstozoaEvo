@@ -8,7 +8,7 @@ namespace Model
 {
     public class Surface
     {
-        public SortedDictionary<long, SourcePoint> sourcePoints = new SortedDictionary<long, SourcePoint>();
+        public Dictionary<long, SourcePoint> sourcePoints = new Dictionary<long, SourcePoint>();
         double leftB, topB, rightB, bottomB;        
 
         public Surface()
@@ -127,7 +127,7 @@ namespace Model
     {
         public static Dictionary<SourceType, Range> rangesStrength = new Dictionary<SourceType, Range>()
         {
-            { SourceType.Fertility, new Range(1, 1) },//new Range(0.001, 0.01) },
+            { SourceType.Fertility, new Range(0.01, 0.1) },//new Range(0.001, 0.01) },
             { SourceType.Toxicity, new Range(0, 1) },
             { SourceType.Viscosity, new Range(0, 1) },
             { SourceType.Fire, new Range(0, 1) },
