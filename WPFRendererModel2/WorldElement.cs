@@ -21,9 +21,10 @@ namespace WPFRendererModel2
         WorldRenderer renderer;
         Matrix matrix;          
         FrameworkElement container;
+        ColoredGeometry[] coloredGeometry = new ColoredGeometry[0];
         double foodWidth = 5;
         double viewedSize = 6;
-
+        bool running = true;
         Timer updateTimer = new Timer();
 
         public double FoodSize
@@ -64,15 +65,33 @@ namespace WPFRendererModel2
             matrix.Translate(100, 100);
             matrix.Scale(3, 3);
 
+            Window mainWindow = Application.Current.Windows[0];
+            new Task(() =>
+            {
+                while (running)
+                {
+                    Matrix invMatrix = matrix;
+                    invMatrix.Invert();
+                    Point leftTopView = invMatrix.Transform(new Point(0, 0));
+                    Point rightBottomView = invMatrix.Transform(new Point(container.ActualWidth, container.ActualHeight));
+                    coloredGeometry = renderer.GetGeometries(leftTopView, rightBottomView, mainWindow);//, matrix);                
+                }
+            }).Start();            
+
             updateTimer = new Timer(updateTimer.Interval);
             updateTimer.Interval = 16;
             updateTimer.Elapsed += (a, b) =>
             {
                 try
                 {
-                    updateTimer.Stop();                    
-                    //TODO make calculations in another thread
-                    Parent.Dispatcher.Invoke(InvalidateVisual); 
+                    updateTimer.Stop();
+                    //start                       
+
+                    Dispatcher.Invoke(() =>
+                    {
+                        InvalidateVisual();
+                    });                    
+                    //end              
                     updateTimer.Start();
                 }
                 catch (Exception e)
@@ -121,12 +140,8 @@ namespace WPFRendererModel2
         protected override void OnRender(DrawingContext drawingContext)
         {
             base.OnRender(drawingContext);
-
-            Matrix invMatrix = matrix;
-            invMatrix.Invert();
-            Point leftTopView = invMatrix.Transform(new Point(0, 0));
-            Point rightBottomView = invMatrix.Transform(new Point(container.ActualWidth, container.ActualHeight));
-            renderer.Render(drawingContext, matrix, leftTopView, rightBottomView);
+            
+            renderer.Render(drawingContext, coloredGeometry, matrix);            
         }
     }
 }

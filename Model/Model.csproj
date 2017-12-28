@@ -45,20 +45,26 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constructor.cs" />
-    <Compile Include="DynamicPointsManager.cs" />
     <Compile Include="Food.cs" />
     <Compile Include="Genome.cs" />
     <Compile Include="HSLColor.cs" />
-    <Compile Include="Net.cs" />
-    <Compile Include="Pnt.cs" />
     <Compile Include="Protozoa.cs" />
     <Compile Include="Surface.cs" />
-    <Compile Include="Vector.cs" />
     <Compile Include="World.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WorldController.cs" />
     <Compile Include="WorldRenderer.cs" />
     <Compile Include="ZoaColor.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MathAssembly\MathAssembly.csproj">
+      <Project>{5837944e-5319-4d0b-86d5-1d0abea705e3}</Project>
+      <Name>MathAssembly</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PointsManager\PointsManager.csproj">
+      <Project>{269f815b-7dca-4bce-a6bf-55d9f3d97a09}</Project>
+      <Name>PointsManager</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

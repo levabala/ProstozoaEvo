@@ -18,6 +18,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFRendererModel2", "WPFRen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestModel", "UnitTestModel\UnitTestModel.csproj", "{6692A4F5-71E8-402B-B985-854C65DBF112}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathAssembly", "MathAssembly\MathAssembly.csproj", "{5837944E-5319-4D0B-86D5-1D0ABEA705E3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PointsManager", "PointsManager\PointsManager.csproj", "{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}"
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -47,12 +51,23 @@ Global
 		{6692A4F5-71E8-402B-B985-854C65DBF112}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6692A4F5-71E8-402B-B985-854C65DBF112}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6692A4F5-71E8-402B-B985-854C65DBF112}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5837944E-5319-4D0B-86D5-1D0ABEA705E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5837944E-5319-4D0B-86D5-1D0ABEA705E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5837944E-5319-4D0B-86D5-1D0ABEA705E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5837944E-5319-4D0B-86D5-1D0ABEA705E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8535149A-E998-4070-8972-8A88CF975623}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

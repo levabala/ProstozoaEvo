@@ -51,45 +51,16 @@ namespace WPFRendererModel2
 
             worldElement.setWorldRenderer(worldRenderer);
             mainCanvas.Children.Add(worldElement);
-                                    
-            worldController.addSource(SourceType.Fire, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Grass, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            /*worldController.addSource(SourceType.Ocean, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Fire, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Grass, 700);            
-            worldController.addSource(SourceType.Ocean, 700);
-            worldController.addSource(SourceType.Fire, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Grass, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Ocean, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Fire, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Grass, 700);
-            worldController.addSource(SourceType.Fire, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Grass, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Ocean, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Fire, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Grass, 700);
-            worldController.addSource(SourceType.Ocean, 700);
-            worldController.addSource(SourceType.Fire, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Grass, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Ocean, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Fire, 700);
-            worldController.addSource(SourceType.Fertility, 100);
-            worldController.addSource(SourceType.Grass, 700);*/
+
+            for (int i = 0; i < 100; i++)
+            {
+                worldController.addSource(SourceType.Fire, 700);
+                worldController.addSource(SourceType.Fertility, 100);
+                worldController.addSource(SourceType.Grass, 700);
+                worldController.addSource(SourceType.Fertility, 100);
+                worldController.addSource(SourceType.Ocean, 700);
+                worldController.addSource(SourceType.Fertility, 100);
+            }
             /*worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MathAssembly;
+using PointsManager;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,7 +23,7 @@ namespace Model
         Random rnd = new Random();
         public Dictionary<long, Protozoa> protozoas = new Dictionary<long, Protozoa>();
         public Dictionary<long, Food> food = new Dictionary<long, Food>();        
-        public DynamicPointsManager pointsManager = new DynamicPointsManager(new Pnt(0, 0), 100);
+        public PointsManager.PointsManager pointsManager = new PointsManager.PointsManager(new Pnt(0, 0), 100);
         public Surface surface = new Surface();
 
         public World()

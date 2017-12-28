@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Model
+namespace MathAssembly
 {
     public struct Vector
     {
@@ -191,6 +191,41 @@ namespace Model
         public static double GetLength(double dx, double dy)
         {            
             return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        public static int GetClosestPointId(Pnt origin, Pnt[] points)
+        {
+            int id = 0;
+            double val = GetLength(origin, points[0]);
+            for (int i = 1; i < points.Length; i++)
+            {
+                double dist = GetLength(origin, points[1]);
+                if (dist < val)
+                {
+                    id = i;
+                    val = dist;
+                }
+            }
+            return id;
+        }
+
+        public static int GetClosestPointId(Pnt origin, Pnt[] points, double limit)
+        {
+            int id = 0;
+            double val = GetLength(origin, points[0]);
+            for (int i = 1; i < points.Length; i++)
+            {
+                double dist = GetLength(origin, points[1]);
+                if (dist < val)
+                {
+                    id = i;
+                    val = dist;
+                }
+            }
+            if (val <= limit)
+                return id;
+            else
+                return -1;
         }
     }
 }

@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}</ProjectGuid>
+    <ProjectGuid>{5837944E-5319-4D0B-86D5-1D0ABEA705E3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PointsManager</RootNamespace>
-    <AssemblyName>PointsManager</AssemblyName>
+    <RootNamespace>MathAssembly</RootNamespace>
+    <AssemblyName>MathAssembly</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -32,28 +32,20 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cluster.cs" />
-    <Compile Include="DinamicPoint.cs" />
-    <Compile Include="DinamicPointsSet.cs" />
-    <Compile Include="PointsManager.cs" />
-    <Compile Include="Layer.cs" />
+    <Compile Include="Net.cs" />
+    <Compile Include="Pnt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StaticPoint.cs" />
-    <Compile Include="StaticPointsSet.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MathAssembly\MathAssembly.csproj">
-      <Project>{5837944e-5319-4d0b-86d5-1d0abea705e3}</Project>
-      <Name>MathAssembly</Name>
-    </ProjectReference>
+    <Compile Include="Vector.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

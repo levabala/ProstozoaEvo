@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MathAssembly;
+using PointsManager;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -6,7 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Model
 {
@@ -47,58 +51,49 @@ namespace Model
             this.world = world;            
         }
 
+        int checkTimes = 50;
+        Stopwatch calcWatch = new Stopwatch();
+        List<double> calcTimes = new List<double>();
         Stopwatch renderWatch = new Stopwatch();
-        public void Render(DrawingContext drawingContext, Matrix matrix, Point leftTopView, Point rightBottomView)
+        List<double> renderTimes = new List<double>();
+        public ColoredGeometry[] GetGeometries(Point leftTopView, Point rightBottomView, Window window)//, Matrix m)
         {
-            renderWatch.Restart();
-            Point zeroPoint = matrix.Transform(new Point(0, 0));            
-            Action drawAll = new Action(() =>
+            calcWatch.Restart();
+            lock (world.tickLocker)
             {
-                DinamicPoint[] elementsToDraw = world.pointsManager.getPoints(leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y);
-                DinamicPointsSet[] setsToDraw = 
-                    world.pointsManager.getPointsSets(
-                        leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y,
-                        maxPartiesRendered);
-                //DinamicPoint[] elementsToDraw = world.pointsManager.getPointsByIdBorders(0, 50, 0, 5);
+                List<ColoredGeometry> coloredGeometry = new List<ColoredGeometry>();
+                DinamicPointsSet[] setsToDraw =
+                        world.pointsManager.getPointsSets(
+                            leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y,
+                            maxPartiesRendered);
                 int clustersDrawed = 0;
-                foreach (Cluster c in world.pointsManager.clusters)
-                {
-                    Point[] edges = new Point[]
-                    {
-                        new Point(c.x, c.y),
-                        new Point(c.x + c.size, c.y + c.size)
-                    };
-                    matrix.Transform(edges);
-                    SolidColorBrush brush = new SolidColorBrush(Colors.Black) { Opacity = 0.4 }; ;
+                int totalElements = 0;
+                foreach (Cluster c in world.pointsManager.clusters)                
                     if (c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
                     {
-                        brush = Brushes.Red;
                         clustersDrawed++;
-                        //drawingContext.DrawRectangle(null, new Pen(brush, 1), new Rect(edges[0], edges[1]));
-                    }
-                }        
-
-                List<FoodDraw> allFoodToDraw = new List<FoodDraw>();
-                List<Protozoa> allZoasToDraw = new List<Protozoa>();
-                List<SourcePoint> allSourcePointsToDraw = new List<SourcePoint>(world.surface.sourcePoints.Values);
-                /*foreach (DinamicPoint p in elementsToDraw)
-                    switch (p.type)
-                    {
-                        case World.ZoaType:
-                            allZoasToDraw.Add(world.protozoas[p.id]);
-                            break;
-                        case World.FoodType:
-                            allFoodToDraw.Add(world.food[p.id]);
-                            break;
-                    }*/
+                        totalElements += c.points.Count;
+                        /*Geometry g = new RectangleGeometry(
+                                    new Rect(
+                                        new Point(c.x, c.y),
+                                        new Point(c.x + c.size, c.y + c.size))
+                                );
+                        g.Freeze();
+                        Color color = Colors.DarkGreen;
+                        ColoredGeometry cg = new ColoredGeometry(g, null, color);
+                        coloredGeometry.Add(cg);*/
+                    }                                
+                //List<Protozoa> zoasToDraw = new List<Protozoa>();
+                //List<SourcePoint> sourcePointsToDraw = new List<SourcePoint>();
                 foreach (DinamicPointsSet set in setsToDraw)
                     switch (set.type)
                     {
                         case World.ZoaType:                            
-                            //allZoasToDraw.Add(world.protozoas[p.id]);
                             break;
                         case World.FoodType:
-                            double size = set.joinDist / 2;
+                            double size = (set.joinDist) / 2;
+                            if (size < foodScale)
+                                size = foodScale;
                             double alpha =
                                 (foodScale * foodScale * set.points.Count) / //total food area 
                                 (Math.PI * (set.joinDist / 2) * (set.joinDist / 2));
@@ -117,47 +112,92 @@ namespace Model
                                 toxicity += f.toxicity;
                             }
                             toxicity /= set.points.Count;
-                            Food joinedFood = new Food(new Pnt(set.x, set.y), fire, grass, ocean, toxicity, 0, size);
-                            allFoodToDraw.Add(new FoodDraw(joinedFood, alpha));
+                            //FoodDraw fd = new FoodDraw(set.x, set.y, alpha, size, fire, grass, ocean);
+                            double sum = fire + grass + ocean;
+
+
+                            Geometry g = new RectangleGeometry(
+                                    new Rect(
+                                        new Point(set.x - size / 2, set.y - size / 2),
+                                        new Point(set.x + size / 2, set.y + size / 2))
+                                );
+                            g.Freeze();
+                            Color c = Color.FromArgb(
+                                        (byte)(alpha * 255),//coeff * 255),
+                                        (byte)(fire / sum * 255),
+                                        (byte)(grass / sum * 255),
+                                        (byte)(ocean / sum * 255));
+                            ColoredGeometry cg = new ColoredGeometry(g, c, null);
+                            coloredGeometry.Add(cg);
                             break;
                     }
-                List<FoodDraw> foodToDraw = new List<FoodDraw>(allFoodToDraw);
-                List<Protozoa> zoasToDraw = new List<Protozoa>();
-                List<SourcePoint> sourcePointsToDraw = new List<SourcePoint>();
-                /*double foodStep = (double)maxFoodRendered / allFoodToDraw.Count;
-                double zoasStep = (double)maxZoasRendered / allZoasToDraw.Count;
-                double sourcesStep = (double)maxSourcesRendered / allSourcePointsToDraw.Count;                
-                double buff = 0;
-                for (int i = 0; i < allFoodToDraw.Count; i++)
-                {
-                    buff += foodStep;
-                    if (buff < 1)
-                        continue;
-                    buff -= 1;
-                    foodToDraw.Add(allFoodToDraw[i]);
-                }
-                buff = 0;
-                for (int i = 0; i < allZoasToDraw.Count; i++)
-                {
-                    buff += zoasStep;
-                    if (buff < 1)
-                        continue;
-                    buff -= 1;
-                    zoasToDraw.Add(allZoasToDraw[i]);
-                }
-                buff = 0;
-                for (int i = 0; i < allSourcePointsToDraw.Count; i++)
-                {
-                    buff += sourcesStep;
-                    if (buff < 1)
-                        continue;
-                    buff -= 1;
-                    sourcePointsToDraw.Add(allSourcePointsToDraw[i]);
-                }*/
 
+                calcTimes.Add(calcWatch.ElapsedMilliseconds);
+                if (calcTimes.Count > checkTimes)
+                    calcTimes.RemoveAt(1);
+
+                int calcTime = 0;
+                foreach (double d in calcTimes)
+                    calcTime += (int)d;
+                calcTime /= calcTimes.Count;
+
+                int renderTime = 0;
+                foreach (double d in renderTimes)
+                    renderTime += (int)d;
+                if (renderTimes.Count > 0)
+                    renderTime /= renderTimes.Count;
+
+                try
+                {
+                    window.Dispatcher.Invoke(() =>
+                    {
+                        if (window.Title != null)
+                            window.Title = String.Format(
+                                "ClustersDrawed: {0}/{1}, Elements(Rendered/MaxRendered/InViewedClusters/Total): {2}/{3}/{4}/{5} ElapsedTime(Calc/Render/Total): {6}/{7}/{8}ms",
+                                clustersDrawed, world.pointsManager.clusters.Length,
+                                coloredGeometry.Count, maxPartiesRendered, totalElements, world.pointsManager.points.Count,
+                                calcTime, renderTime, calcTime + renderTime);
+                    });
+                }
+                catch (Exception e) { }
+
+                return coloredGeometry.ToArray();
+            }            
+        }
+        
+
+        public void Render(DrawingContext drawingContext, ColoredGeometry[] coloredGeometry, Matrix m)
+        {
+            renderWatch.Restart();
+            DrawingGroup group = new DrawingGroup();
+            group.Transform = new MatrixTransform(m);            
+            foreach (ColoredGeometry cg in coloredGeometry)
+                group.Children.Add(
+                    new GeometryDrawing(
+                        (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
+                        (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1), 
+                        cg.g)
+                    );
+            group.Freeze();
+            drawingContext.DrawDrawing(group);
+
+            renderTimes.Add(renderWatch.ElapsedMilliseconds);
+            if (renderTimes.Count > checkTimes)
+                renderTimes.RemoveAt(1);            
+        }
+
+        /*Stopwatch renderWatch = new Stopwatch();
+        public void Render(DrawingContext drawingContext, Matrix matrix, Drawing[] drawings)
+        {         
+            
+            renderWatch.Restart();
+            Point zeroPoint = matrix.Transform(new Point(0, 0));            
+            Action drawAll = new Action(() =>
+            {                
+                                                
 
                 //firstly, let's draw the surface
-                foreach (SourcePoint spoint in sourcePointsToDraw)
+                /*foreach (SourcePoint spoint in sourcePointsToDraw)
                 {
                     RadialGradientBrush brush = sourceBrushes[spoint.sourceType];
                     double coeff = sourcesCoeffs[spoint.sourceType];
@@ -165,16 +205,13 @@ namespace Model
                     double radius = Math.Abs(zeroPoint.X - matrix.Transform(new Point(spoint.distance, 0)).X);
                     drawingContext.DrawEllipse(brush, null, matrix.Transform(spoint.location.toPoint()), radius * 2, radius * 2);
                     //drawingContext.DrawEllipse(null, new Pen(new SolidColorBrush(Colors.Black) { Opacity = 0.3 }, 1), matrix.Transform(spoint.location.toPoint()), radius, radius);
-                }
+                }//
 
                 //now food                  
                 foreach (FoodDraw f in foodToDraw)
-                {
-                    /*double coeff = (f.size / foodMaxDensity);
-                    if (coeff > 1)
-                        coeff = 1;*/
-                    double radius = f.f.size;// (coeff + 1) * foodScale;
-                    Point center = new Point(f.f.point.x - radius, f.f.point.y - radius);
+                {                    
+                    double radius = f.size;
+                    Point center = new Point(f.x - radius, f.y - radius);
                     center = matrix.Transform(center);
 
                     double zeroX = matrix.Transform(new Point(0, 0)).X;
@@ -184,9 +221,9 @@ namespace Model
                     SolidColorBrush brush = new SolidColorBrush(
                         Color.FromArgb(
                             (byte)(f.alpha * 255),//coeff * 255),
-                            (byte)(f.f.fireRate * 255), 
-                            (byte)(f.f.grassRate * 255), 
-                            (byte)(f.f.oceanRate * 255)));
+                            (byte)(f.fire * 255), 
+                            (byte)(f.grass * 255), 
+                            (byte)(f.ocean * 255)));
                     drawingContext.DrawRectangle(brush, null, new Rect(center, new Size(width, width)));
                 }
                 
@@ -195,9 +232,9 @@ namespace Model
                     "ClustersDrawed: {0}/{1}, ZoaDrawed: {2}/{3}, FoodDrawed: {4}/{5}, " +
                     "SourcePointsDrawed: {6}/{7}, MaxParties: {8}, MinLayerId: {9}, RenderTime: {10}ms", 
                     clustersDrawed, world.pointsManager.clusters.Length,
-                    zoasToDraw.Count, world.protozoas.Count,
+                    0,0,//zoasToDraw.Count, world.protozoas.Count,
                     foodToDraw.Count, world.food.Count,
-                    sourcePointsToDraw.Count, world.surface.sourcePoints.Count,
+                    0,0,//sourcePointsToDraw.Count, world.surface.sourcePoints.Count,
                     maxPartiesRendered,
                     world.pointsManager.minLayerId,
                     renderWatch.ElapsedMilliseconds);
@@ -205,17 +242,70 @@ namespace Model
 
             lock (world.tickLocker)
                 drawAll();            
-        }
+        }*/
 
-        private struct FoodDraw
+        /*private struct FoodDraw
         {
-            public double alpha;
-            public Food f;
+            public double alpha, size, fire, grass, ocean, x, y;                        
             public FoodDraw(Food f, double alpha)
             {
                 this.alpha = alpha;
-                this.f = f;
+                x = f.point.x;
+                y = f.point.y;
+                size = f.size;
+                fire = f.fireRate;
+                grass = f.grassRate;
+                ocean = f.oceanRate;
             }
+
+            public FoodDraw(double x, double y, double alpha, double size, double fire, double grass, double ocean)
+            {
+                this.x = x;
+                this.y = y;
+                this.alpha = alpha;
+                this.size = size;
+                double sum = fire + grass + ocean;
+                this.fire = fire / sum;
+                this.grass = grass / sum;
+                this.ocean = ocean / sum;
+            }
+        }*/        
+
+        private struct FoodDraw
+        {
+            public double alpha, size, fire, grass, ocean, x, y;
+            public FoodDraw(Food f, double alpha)
+            {
+                this.alpha = alpha;
+                x = f.point.x;
+                y = f.point.y;
+                size = f.size;
+                fire = f.fireRate;
+                grass = f.grassRate;
+                ocean = f.oceanRate;
+            }
+
+            public FoodDraw(double x, double y, double alpha, double size, double fire, double grass, double ocean)
+            {
+                this.x = x;
+                this.y = y;
+                this.alpha = alpha;
+                this.size = size;
+                double sum = fire + grass + ocean;
+                this.fire = fire / sum;
+                this.grass = grass / sum;
+                this.ocean = ocean / sum;
+            }
+        }
+
+        private struct ZoaDraw
+        {
+
+        }
+
+        private struct SourceDraw
+        {
+
         }
 
         //without-clustering render
@@ -290,5 +380,17 @@ namespace Model
                 drawingContext.DrawEllipse(brush, pen, translatedCenter, radius, radius);
             }
         }*/
-    }    
+    }
+
+    public struct ColoredGeometry
+    {
+        public Geometry g;
+        public Color? brushColor, penColor;
+        public ColoredGeometry(Geometry g, Color? brushColor, Color? penColor)
+        {
+            this.g = g;
+            this.brushColor = brushColor;
+            this.penColor = penColor;
+        }
+    }
 }

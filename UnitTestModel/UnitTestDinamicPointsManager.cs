@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace UnitTestModel
 {
     [TestClass]
-    public class UnitTestDinamicPointsManager
+    public class UnitTestPointsManager
     {
         [TestMethod]
         public void TestMethod1()

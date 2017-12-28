@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PointsManager")]
+[assembly: AssemblyTitle("MathAssembly")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("PointsManager")]
+[assembly: AssemblyProduct("MathAssembly")]
 [assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("269f815b-7dca-4bce-a6bf-55d9f3d97a09")]
+[assembly: Guid("5837944e-5319-4d0b-86d5-1d0abea705e3")]
 
 // Version information for an assembly consists of the following four values:
 //

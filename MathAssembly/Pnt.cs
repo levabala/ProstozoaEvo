@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Model
+namespace MathAssembly
 {
     public struct Pnt
     {
