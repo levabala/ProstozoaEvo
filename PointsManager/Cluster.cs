@@ -10,9 +10,9 @@ namespace PointsManager
     {
         public Dictionary<long, DinamicPoint> points = new Dictionary<long, DinamicPoint>();
         public Layer[] layers;
-        public int idX, idY;
+        public int idX, idY, idZ;
         public double x, y, size;
-        public Cluster(double x, double y, double size, int idX, int idY, int layersCount)
+        public Cluster(double x, double y, double size, int idX, int idY, int idZ, int layersCount, int deepStep)
         {
             this.x = x;
             this.y = y;
@@ -20,7 +20,7 @@ namespace PointsManager
             this.idY = idY;
             this.size = size;
             layers = new Layer[layersCount];
-            double joinStep = size / layersCount;
+            double joinStep = (size / layersCount) + deepStep * idZ;
             //for (int i = layersCount - 1; i >= 0; i--)
             for (int i = 0; i < layers.Length; i++)
                 layers[i] = new Layer(i, joinStep * i);

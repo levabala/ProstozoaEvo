@@ -9,24 +9,25 @@ namespace PointsManager
 {
     public class PointsManager
     {
-        public readonly Pnt ZERO;
-        public readonly double clusterSize;
+        public readonly Pnt ZERO;        
         public Dictionary<long, DinamicPoint> points = new Dictionary<long, DinamicPoint>(); //int max is 2,147,483,647 so it's enough
-        public Cluster[,] clusters;
+        public Cluster[,,]clusters; //x - y - deep
         public Cluster zeroCluster;
 
         //debug
         public int li, ri, ti, bi, minLayerId;
 
-        int clustersLeft, clustersRight, clustersTop, clustersBottom;
+        int clustersLeft, clustersRight, clustersTop, clustersBottom, clustersDeep;
         int layersCount = 40;
-        int clustersStep = 10;
-        public PointsManager(Pnt zeroPoint, double clusterSize)
-        {
+        double zeroLayerClusterSize;
+        int maxClustersViewed = 700;
+        int clustersStep = 10; //so one 1st-layer cluster will contains 10x10=100 0-layer clusters
+        public PointsManager(Pnt zeroPoint, double zeroLayerClusterSize)
+        {            
             clusters = new Cluster[1, 1];
-            zeroCluster = clusters[0, 0] = new Cluster(zeroPoint.x, zeroPoint.y, clusterSize, 0, 0, layersCount);
+            zeroCluster = clusters[0, 0] = new Cluster(zeroPoint.x, zeroPoint.y, zeroLayerClusterSize, 0, 0, layersCount);
             ZERO = zeroPoint;
-            this.clusterSize = clusterSize;
+            this.zeroLayerClusterSize = zeroLayerClusterSize;
             clustersLeft = clustersRight = clustersTop = clustersBottom = 0;
         }
 
@@ -324,11 +325,24 @@ namespace PointsManager
                     getCluster(point.x, point.bpy)
                     );
         }
+
         private void updatePoint(DinamicPoint point, double dx, double dy, double interactRadius)
         {
             bool clusterCrossed = point.updateTriggers(dx, dy, interactRadius);
             if (clusterCrossed)
                 updatePoint(point);
+        }
+
+        private int getLayerDeepness(int rangeIdX, int rangeIdY)
+        {            
+            int layerId = 0;
+            int clustersCount = (int)((rangeIdX * rangeIdY) / zeroLayerClusterSize);
+            while (clustersCount > maxClustersViewed)
+            {
+                clustersCount = (int)Math.Ceiling((decimal)clustersCount / clustersStep * clustersStep);
+                layerId++;
+            }
+            return layerId;
         }
     }                  
 
