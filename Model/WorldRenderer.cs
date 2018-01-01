@@ -57,11 +57,10 @@ namespace Model
         Stopwatch renderWatch = new Stopwatch();
         List<double> renderTimes = new List<double>();
         public ColoredGeometry[] GetGeometries(Point leftTopView, Point rightBottomView, Window window)//, Matrix m)
-        {
+        {						
             calcWatch.Restart();
             lock (world.tickLocker)
-            {
-                List<ColoredGeometry> coloredGeometry = new List<ColoredGeometry>();
+            {                
                 DinamicPointsSet[] setsToDraw =
                         world.pointsManager.getPointsSets(
                             leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y,
@@ -82,59 +81,64 @@ namespace Model
                         Color color = Colors.DarkGreen;
                         ColoredGeometry cg = new ColoredGeometry(g, null, color);
                         coloredGeometry.Add(cg);*/
-                    }                                
+                    }				
                 //List<Protozoa> zoasToDraw = new List<Protozoa>();
                 //List<SourcePoint> sourcePointsToDraw = new List<SourcePoint>();
-                foreach (DinamicPointsSet set in setsToDraw)
-                    switch (set.type)
-                    {
-                        case World.ZoaType:                            
-                            break;
-                        case World.FoodType:
-                            double size = (set.joinDist) / 2;
-                            if (size < foodScale)
-                                size = foodScale;
-                            double alpha =
-                                (foodScale * foodScale * set.points.Count) / //total food area 
-                                (Math.PI * (set.joinDist / 2) * (set.joinDist / 2));
-                            if (alpha > 1)
-                                alpha = 1;
-                            double fire = 0;
-                            double grass = 0;
-                            double ocean = 0;
-                            double toxicity = 0;
-                            foreach (DinamicPoint p in set.points)
-                            {
-                                Food f = world.food[p.id];
-                                fire += f.fire;
-                                grass += f.grass;
-                                ocean += f.ocean;
-                                toxicity += f.toxicity;
-                            }
-                            toxicity /= set.points.Count;
-                            //FoodDraw fd = new FoodDraw(set.x, set.y, alpha, size, fire, grass, ocean);
-                            double sum = fire + grass + ocean;
 
+				ColoredGeometry[] coloredGeometry = new ColoredGeometry[setsToDraw.Length];
+				for (int i = 0; i < setsToDraw.Length; i++)
+				{
+					DinamicPointsSet set = setsToDraw[i];
+					switch (set.type)
+					{
+						case World.ZoaType:
+							break;
+						case World.FoodType:							
+							double size = (set.joinDist) / 2;
+							if (size < foodScale)
+								size = foodScale;
+							double alpha =
+								(foodScale * foodScale * set.points.Count) / //total food area 
+								(Math.PI * (set.joinDist / 2) * (set.joinDist / 2));
+							if (alpha > 1)
+								alpha = 1;
+							double fire = 0;
+							double grass = 0;
+							double ocean = 0;
+							double toxicity = 0;
+							foreach (DinamicPoint p in set.points)
+							{
+								Food f = world.food[p.id];
+								fire += f.fire;
+								grass += f.grass;
+								ocean += f.ocean;
+								toxicity += f.toxicity;
+							}
+							toxicity /= set.points.Count;
+							//FoodDraw fd = new FoodDraw(set.x, set.y, alpha, size, fire, grass, ocean);
+							double sum = fire + grass + ocean;
 
-                            Geometry g = new RectangleGeometry(
-                                    new Rect(
-                                        new Point(set.x - size / 2, set.y - size / 2),
-                                        new Point(set.x + size / 2, set.y + size / 2))
-                                );
-                            g.Freeze();
-                            Color c = Color.FromArgb(
-                                        (byte)(alpha * 255),//coeff * 255),
-                                        (byte)(fire / sum * 255),
-                                        (byte)(grass / sum * 255),
-                                        (byte)(ocean / sum * 255));
-                            ColoredGeometry cg = new ColoredGeometry(g, c, null);
-                            coloredGeometry.Add(cg);
-                            break;
-                    }
+							Geometry g = new RectangleGeometry(
+									new Rect(
+										new Point(set.x - size / 2, set.y - size / 2),
+										new Point(set.x + size / 2, set.y + size / 2))
+								);
+							g.Freeze();
+
+							Color c = Color.FromArgb(
+										(byte)(alpha * 255),//coeff * 255),
+										(byte)(fire / sum * 255),
+										(byte)(grass / sum * 255),
+										(byte)(ocean / sum * 255));
+							ColoredGeometry cg = new ColoredGeometry(g, c, null);
+							coloredGeometry[i] = cg;
+							break;
+					}
+				}
 
                 calcTimes.Add(calcWatch.ElapsedMilliseconds);
                 if (calcTimes.Count > checkTimes)
-                    calcTimes.RemoveAt(1);
+                    calcTimes.RemoveAt(0);
 
                 int calcTime = 0;
                 foreach (double d in calcTimes)
@@ -142,8 +146,9 @@ namespace Model
                 calcTime /= calcTimes.Count;
 
                 int renderTime = 0;
-                foreach (double d in renderTimes)
-                    renderTime += (int)d;
+				lock (renderTimes)
+					foreach (double d in renderTimes)
+						renderTime += (int)d;
                 if (renderTimes.Count > 0)
                     renderTime /= renderTimes.Count;
 
@@ -153,21 +158,24 @@ namespace Model
                     {
                         if (window.Title != null)
                             window.Title = String.Format(
-                                "ClustersDrawed: {0}/{1}, Elements(Rendered/MaxRendered/InViewedClusters/Total): {2}/{3}/{4}/{5} ElapsedTime(Calc/Render/Total): {6}/{7}/{8}ms",
+                                "ClustersDrawed: {0}/{1}, Elements(Rendered/MaxRendered/InViewedClusters/Total): {2}/{3}/{4}/{5} " + 
+								"ElapsedTime(Calc/Render/Total): {6}/{7}/{8}ms",
                                 clustersDrawed, world.pointsManager.clusters.Length,
-                                coloredGeometry.Count, maxPartiesRendered, totalElements, world.pointsManager.points.Count,
+                                coloredGeometry.Length, maxPartiesRendered, totalElements, world.pointsManager.points.Count,
                                 calcTime, renderTime, calcTime + renderTime);
                     });
                 }
                 catch (Exception e) { }
 
-                return coloredGeometry.ToArray();
+				return coloredGeometry;
             }            
         }
         
 
         public void Render(DrawingContext drawingContext, ColoredGeometry[] coloredGeometry, Matrix m)
         {
+			//Window mainWindow = Application.Current.Windows[0];
+
             renderWatch.Restart();
             DrawingGroup group = new DrawingGroup();
             group.Transform = new MatrixTransform(m);            
@@ -181,9 +189,10 @@ namespace Model
             group.Freeze();
             drawingContext.DrawDrawing(group);
 
+			lock (renderTimes)
             renderTimes.Add(renderWatch.ElapsedMilliseconds);
             if (renderTimes.Count > checkTimes)
-                renderTimes.RemoveAt(1);            
+                renderTimes.RemoveAt(0);       
         }
 
         /*Stopwatch renderWatch = new Stopwatch();

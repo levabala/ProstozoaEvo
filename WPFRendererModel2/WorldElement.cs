@@ -74,12 +74,22 @@ namespace WPFRendererModel2
                     invMatrix.Invert();
                     Point leftTopView = invMatrix.Transform(new Point(0, 0));
                     Point rightBottomView = invMatrix.Transform(new Point(container.ActualWidth, container.ActualHeight));
-                    coloredGeometry = renderer.GetGeometries(leftTopView, rightBottomView, mainWindow);//, matrix);                
+                    coloredGeometry = renderer.GetGeometries(leftTopView, rightBottomView, mainWindow);//, matrix);
+                                                                                                       /*lock (coloredGeometry)
+                                                                                                           coloredGeometry = cg.ToArray();*/
+                    try
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            InvalidateVisual();
+                        });
+                    }
+                    catch (Exception e) { }
                 }
             }).Start();            
 
             updateTimer = new Timer(updateTimer.Interval);
-            updateTimer.Interval = 16;
+			updateTimer.Interval = 300;// 16;
             updateTimer.Elapsed += (a, b) =>
             {
                 try
@@ -91,7 +101,8 @@ namespace WPFRendererModel2
                     {
                         InvalidateVisual();
                     });                    
-                    //end              
+                    //end   
+					//mainWindow.Title = "ASD";
                     updateTimer.Start();
                 }
                 catch (Exception e)
@@ -99,7 +110,7 @@ namespace WPFRendererModel2
 
                 }
             };
-            updateTimer.Start();                        
+            //updateTimer.Start();                        
         }
 
         private void On_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -140,8 +151,9 @@ namespace WPFRendererModel2
         protected override void OnRender(DrawingContext drawingContext)
         {
             base.OnRender(drawingContext);
-            
-            renderer.Render(drawingContext, coloredGeometry, matrix);            
+
+			ColoredGeometry[] cg = coloredGeometry.ToArray();			
+			renderer.Render(drawingContext, cg, matrix);            
         }
     }
 }
