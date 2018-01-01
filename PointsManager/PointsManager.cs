@@ -21,11 +21,11 @@ namespace PointsManager
         int layersCount = 40;
         double zeroLayerClusterSize;
         int maxClustersViewed = 700;
-        int clustersStep = 10; //so one 1st-layer cluster will contains 10x10=100 0-layer clusters
+        int clustersDeepScale = 10; //so one 1st-layer cluster will contains 10x10=100 0-layer clusters
         public PointsManager(Pnt zeroPoint, double zeroLayerClusterSize)
         {            
-            clusters = new Cluster[1, 1];
-            zeroCluster = clusters[0, 0] = new Cluster(zeroPoint.x, zeroPoint.y, zeroLayerClusterSize, 0, 0, layersCount);
+            clusters = new Cluster[1, 1, 1];
+            zeroCluster = clusters[0, 0, 0] = new Cluster(zeroPoint.x, zeroPoint.y, zeroLayerClusterSize, 0, 0, layersCount);
             ZERO = zeroPoint;
             this.zeroLayerClusterSize = zeroLayerClusterSize;
             clustersLeft = clustersRight = clustersTop = clustersBottom = 0;
@@ -88,7 +88,7 @@ namespace PointsManager
             return output.ToArray(); ;
         }
 
-        public DinamicPointsSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
+        public DinamicPointsSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int deepness, int maxPointsCount)
         {            
             List<DinamicPointsSet> output = new List<DinamicPointsSet>();
             if (ri > clusters.GetLength(0) - 1)
@@ -107,7 +107,7 @@ namespace PointsManager
                 for (int idX = li; idX <= ri; idX++)
                     for (int idY = ti; idY <= bi; idY++)
                     {
-                        pointsCount += clusters[idX, idY].layers[minLayerId].sets.Count;
+                        pointsCount += clusters[idX, idY, deepness].layers[minLayerId].sets.Count;
                         if (pointsCount > maxPointsCount)
                         {                            
                             //init exit
@@ -137,21 +137,6 @@ namespace PointsManager
                     output.AddRange(clusters[idX, idY].layers[minLayerId].sets);
             this.minLayerId = minLayerId;
             return output.ToArray(); ;
-
-            /*
-             * int pointsPerCluster = maxPointsCount;
-                    for (int idX2 = li; idX2 < idX; idX2++)
-                        for (int idY2 = ti; idY2 <= bi; idY2++)
-                            pointsPerCluster -= clusters[idX2, idY2].layers[minLayerId].sets.Count;                    
-                    for (int idY2 = ti; idY2 <= idY; idY2++)
-                        pointsPerCluster -= clusters[idX, idY2].layers[minLayerId].sets.Count;
-                    pointsPerCluster /= clustersLeft;
-
-                    if (pointsPerCluster < 1)
-                        pointsPerCluster = 1;
-                    minLayerId = Math.Max(minLayerId, clusters[idX, idY].getLayerId(pointsPerCluster));
-                    clustersLeft--;
-             */
         }
 
         private int[] getClustersIdsByEdges(double lx, double rx, double ty, double by)
@@ -160,6 +145,7 @@ namespace PointsManager
             int ri = getClusterIdX(rx);
             int ti = getClusterIdY(ty);
             int bi = getClusterIdY(by);
+            int deepness = getClusterIdZ(ri - li + 1, bi - ti + 1);
             if (li < 0)
                 li = 0;
             if (ri < 0)
@@ -172,10 +158,10 @@ namespace PointsManager
             this.ri = ri;
             this.ti = ti;
             this.bi = bi;
-            return new int[] { li, ri, ti, bi };
+            return new int[] { li, ri, ti, bi, deepness };
         }
 
-        private Cluster getCluster(double x, double y)
+        private Cluster getCluster(double x, double y, int deepness)
         {
             int idX = getClusterIdX(x);
             int idY = getClusterIdY(y);
@@ -187,9 +173,9 @@ namespace PointsManager
             if (needToFill)
             {
                 fillClustersTo(idX, idY);
-                return getCluster(x, y);
+                return getCluster(x, y, deepness);
             }
-            return clusters[idX, idY];
+            return clusters[idX, idY, deepness];
         }
 
         private int getClusterIdX(double x)
@@ -228,6 +214,20 @@ namespace PointsManager
                 addClustersRow(false);
                 addBottom--;
             }
+        }
+
+        private void addClustersLayer()
+        {
+            clustersDeep++;            
+            for (int idX = 0; idX < clusters.GetLength(0); idX++)
+                for (int idY = 0; idY < clusters.GetLength(1); idY++)
+                    clusters[idX, idY, clustersDeep] =
+                        new Cluster(
+                            getClusterX(idX),
+                            getClusterY(idY),
+                            zeroLayerClusterSize * (clustersDeep + 1),
+                            idX, idY, clustersDeep, layersCount, clustersDeepScale
+                        );
         }
 
         private void addClustersRow(bool before)
@@ -300,14 +300,14 @@ namespace PointsManager
             clusters = newClusters;
         }        
         
-        private double getClusterX(int id)
+        private double getClusterX(int id, int deepness)
         {
-            return clusterSize * (id - clustersLeft);
+            return (zeroLayerClusterSize * (deepness * clustersDeepScale + 1)) * (id - clustersLeft);
         }
 
-        private double getClusterY(int id)
+        private double getClusterY(int id, int deepness)
         {
-            return clusterSize * (id - clustersTop);
+            return (zeroLayerClusterSize + (deepness * (clustersDeepScale - 1))) * (id - clustersTop);
         }
 
         public void updatePoint(Pnt point, double interactRadius, int id)
@@ -333,13 +333,13 @@ namespace PointsManager
                 updatePoint(point);
         }
 
-        private int getLayerDeepness(int rangeIdX, int rangeIdY)
+        private int getClusterIdZ(int rangeIdX, int rangeIdY)
         {            
             int layerId = 0;
             int clustersCount = (int)((rangeIdX * rangeIdY) / zeroLayerClusterSize);
             while (clustersCount > maxClustersViewed)
             {
-                clustersCount = (int)Math.Ceiling((decimal)clustersCount / clustersStep * clustersStep);
+                clustersCount = (int)Math.Ceiling((decimal)clustersCount / clustersDeepScale * clustersDeepScale);
                 layerId++;
             }
             return layerId;
