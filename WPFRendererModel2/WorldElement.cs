@@ -74,9 +74,8 @@ namespace WPFRendererModel2
                     invMatrix.Invert();
                     Point leftTopView = invMatrix.Transform(new Point(0, 0));
                     Point rightBottomView = invMatrix.Transform(new Point(container.ActualWidth, container.ActualHeight));
-                    coloredGeometry = renderer.GetGeometries(leftTopView, rightBottomView, mainWindow);//, matrix);
-                                                                                                       /*lock (coloredGeometry)
-                                                                                                           coloredGeometry = cg.ToArray();*/
+                    coloredGeometry = renderer.GetGeometries(leftTopView, rightBottomView, mainWindow);//, matrix);                                                                                                      
+
                     try
                     {
                         Dispatcher.Invoke(() =>

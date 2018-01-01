@@ -23,7 +23,7 @@ namespace Model
         Random rnd = new Random();
         public Dictionary<long, Protozoa> protozoas = new Dictionary<long, Protozoa>();
         public Dictionary<long, Food> food = new Dictionary<long, Food>();        
-        public PointsManager.PointsManager pointsManager = new PointsManager.PointsManager(new Pnt(0, 0), 100);
+        public PointsManager.PointsManager pointsManager = new PointsManager.PointsManager(new Pnt(0, 0), 1000);
         public Surface surface = new Surface();
 
         public World()

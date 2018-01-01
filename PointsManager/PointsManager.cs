@@ -10,24 +10,24 @@ namespace PointsManager
     public class PointsManager
     {
         public readonly Pnt ZERO;
-        public readonly double clusterSize;
+        public readonly double BaseClusterSize;
         public Dictionary<long, DinamicPoint> points = new Dictionary<long, DinamicPoint>(); //int max is 2,147,483,647 so it's enough
-        public Cluster[,] clusters;
-        public Cluster zeroCluster;
+        public BaseCluster[,] BaseClusters;
+        public BaseCluster zeroBaseCluster;
 
         //debug
         public int li, ri, ti, bi, minLayerId;
 
-        int clustersLeft, clustersRight, clustersTop, clustersBottom;
+        int BaseClustersLeft, BaseClustersRight, BaseClustersTop, BaseClustersBottom;
         int layersCount = 40;
-        int clustersStep = 10;
-        public PointsManager(Pnt zeroPoint, double clusterSize)
+        int BaseClustersStep = 10;
+        public PointsManager(Pnt zeroPoint, double BaseClusterSize)
         {
-            clusters = new Cluster[1, 1];
-            zeroCluster = clusters[0, 0] = new Cluster(zeroPoint.x, zeroPoint.y, clusterSize, 0, 0, layersCount);
+            BaseClusters = new BaseCluster[1, 1];
+            zeroBaseCluster = BaseClusters[0, 0] = new BaseCluster(zeroPoint.x, zeroPoint.y, BaseClusterSize, 0, 0, layersCount);
             ZERO = zeroPoint;
-            this.clusterSize = clusterSize;
-            clustersLeft = clustersRight = clustersTop = clustersBottom = 0;
+            this.BaseClusterSize = BaseClusterSize;
+            BaseClustersLeft = BaseClustersRight = BaseClustersTop = BaseClustersBottom = 0;
         }
 
         public void addPoint(Pnt point, double interactRadius, long id, int type)
@@ -43,70 +43,74 @@ namespace PointsManager
             updatePoint(p);
             points[id] = p;
         }
-
+        
         public DinamicPoint[] getNeighbors(long id)
         {
             DinamicPoint point = points[id];
             //int count = 0;
-            List<DinamicPoint> nearPoints = new List<DinamicPoint>();            
-            foreach (Cluster c in point.clusters)
-                foreach (DinamicPoint p in c.points.Values)
-                    nearPoints.Add(p);
+            List<DinamicPoint> nearPoints = new List<DinamicPoint>();
+            foreach (BaseCluster c in point.BaseClusters)
+            {                                
+                foreach (long pointId in c.storedPoints)
+                    nearPoints.Add(points[pointId]);
+            }
             return nearPoints.ToArray();
-            /*
-            long[] ids = new long[count];
-            int index = 0;
-            foreach (Cluster c in point.clusters)
-                foreach (DinamicPoint p in c.points.Values)
-                    ids[index] = p.id;
-            return ids;*/
         }
 
+        /*
         public DinamicPoint[] getPoints(double lx, double rx, double ty, double by)
         {
-            int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
+            int[] ids = getBaseClustersIdsByEdges(lx, rx, ty, by);
             return getPointsByIdBorders(ids[0], ids[1], ids[2], ids[3]);
         }
 
-        public DinamicPointsSet[] getPointsSets(double lx, double rx, double ty, double by, int maxPointsCount)
-        {
-            int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
-            return getPointsSetsByIdBorders(ids[0], ids[1], ids[2], ids[3], maxPointsCount);
-        }
 
         public DinamicPoint[] getPointsByIdBorders(int li, int ri, int ti, int bi)
         {            
             List<DinamicPoint> output = new List<DinamicPoint>();
-            if (ri > clusters.GetLength(0) - 1)
-                ri = clusters.GetLength(0) - 1;
-            if (bi > clusters.GetLength(1) - 1)
-                bi = clusters.GetLength(1) - 1;
+            if (ri > BaseClusters.GetLength(0) - 1)
+                ri = BaseClusters.GetLength(0) - 1;
+            if (bi > BaseClusters.GetLength(1) - 1)
+                bi = BaseClusters.GetLength(1) - 1;
             for (int idX = li; idX <= ri; idX++)
                 for (int idY = ti; idY <= bi; idY++)
-                    output.AddRange(clusters[idX, idY].points.Values);
+                    output.AddRange(BaseClusters[idX, idY].points.Values);
             return output.ToArray(); ;
+        }*/
+
+        public DinamicPointsSet[] getPointsSets(double lx, double rx, double ty, double by, int maxPointsCount)
+        {
+            int[] ids = getBaseClustersIdsByEdges(lx, rx, ty, by);
+            return getPointsSetsByIdBorders(ids[0], ids[1], ids[2], ids[3], maxPointsCount, new Pnt(lx, ty), new Pnt(rx, by));
         }
 
-        public DinamicPointsSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
-        {            
+        public DinamicPointsSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount, Pnt leftTop, Pnt rightBottom)
+        {                     
             List<DinamicPointsSet> output = new List<DinamicPointsSet>();
-            if (ri > clusters.GetLength(0) - 1)
-                ri = clusters.GetLength(0) - 1;
-            if (bi > clusters.GetLength(1) - 1)
-                bi = clusters.GetLength(1) - 1;
-            int totalClusters = (ri - li + 1) * (bi - ti + 1);
-            int clustersLeft = totalClusters;
+            if (ri > BaseClusters.GetLength(0) - 1)
+                ri = BaseClusters.GetLength(0) - 1;
+            if (bi > BaseClusters.GetLength(1) - 1)
+                bi = BaseClusters.GetLength(1) - 1;
+            int totalBaseClusters = (ri - li + 1) * (bi - ti + 1);
+
+            //method with sub-clusters
+            int pointsPerCluster = maxPointsCount / totalBaseClusters;
+            for (int idX = li; idX <= ri; idX++)
+                for (int idY = ti; idY <= bi; idY++)
+                    output.AddRange(BaseClusters[idX, idY].getPointSets(leftTop, rightBottom, pointsPerCluster));
+            return output.ToArray();
+
+            //method without sub-clusters
+            /*
             int minLayerId = 0;
             int pointsCount = Int32.MaxValue;
-            //Cluster[,] clustersIn = new Cluster[ri - li + 1, bi - ti + 1];
-
             while(pointsCount > maxPointsCount && minLayerId < layersCount)
             {
                 pointsCount = 0;
                 for (int idX = li; idX <= ri; idX++)
                     for (int idY = ti; idY <= bi; idY++)
                     {
-                        pointsCount += clusters[idX, idY].layers[minLayerId].sets.Count;
+                        pointsCount += BaseClusters[idX, idY].layers[minLayerId].sets.Count;
                         if (pointsCount > maxPointsCount)
                         {                            
                             //init exit
@@ -119,46 +123,47 @@ namespace PointsManager
             if (minLayerId >= layersCount)
                 minLayerId = layersCount - 1;
 
-            //one-loop method
-            /*for (int idX = li; idX <= ri; idX++)
-                for (int idY = ti; idY <= bi; idY++)
-                {
-                    int pointsPerCluster = (maxPointsCount) / clustersLeft;
-                    if (pointsPerCluster < 1)
-                        pointsPerCluster = 1;
-                    minLayerId = Math.Max(minLayerId, clusters[idX, idY].getLayerId(pointsPerCluster));
-                    maxPointsCount -= clusters[idX, idY].layers[minLayerId].sets.Count;
-                    clustersLeft--;
-                }*/
-
             for (int idX = li; idX <= ri; idX++)
                 for (int idY = ti; idY <= bi; idY++)                                    
-                    output.AddRange(clusters[idX, idY].layers[minLayerId].sets);
+                    output.AddRange(BaseClusters[idX, idY].layers[minLayerId].sets);
             this.minLayerId = minLayerId;
-            return output.ToArray(); ;
-
-            /*
-             * int pointsPerCluster = maxPointsCount;
-                    for (int idX2 = li; idX2 < idX; idX2++)
-                        for (int idY2 = ti; idY2 <= bi; idY2++)
-                            pointsPerCluster -= clusters[idX2, idY2].layers[minLayerId].sets.Count;                    
-                    for (int idY2 = ti; idY2 <= idY; idY2++)
-                        pointsPerCluster -= clusters[idX, idY2].layers[minLayerId].sets.Count;
-                    pointsPerCluster /= clustersLeft;
-
-                    if (pointsPerCluster < 1)
-                        pointsPerCluster = 1;
-                    minLayerId = Math.Max(minLayerId, clusters[idX, idY].getLayerId(pointsPerCluster));
-                    clustersLeft--;
+            return output.ToArray(); ;                
              */
+
+                    //one-loop method
+                    /*for (int idX = li; idX <= ri; idX++)
+                        for (int idY = ti; idY <= bi; idY++)
+                        {
+                            int pointsPerBaseCluster = (maxPointsCount) / BaseClustersLeft;
+                            if (pointsPerBaseCluster < 1)
+                                pointsPerBaseCluster = 1;
+                            minLayerId = Math.Max(minLayerId, BaseClusters[idX, idY].getLayerId(pointsPerBaseCluster));
+                            maxPointsCount -= BaseClusters[idX, idY].layers[minLayerId].sets.Count;
+                            BaseClustersLeft--;
+                        }*/
+
+                    /*
+                     * int pointsPerBaseCluster = maxPointsCount;
+                            for (int idX2 = li; idX2 < idX; idX2++)
+                                for (int idY2 = ti; idY2 <= bi; idY2++)
+                                    pointsPerBaseCluster -= BaseClusters[idX2, idY2].layers[minLayerId].sets.Count;                    
+                            for (int idY2 = ti; idY2 <= idY; idY2++)
+                                pointsPerBaseCluster -= BaseClusters[idX, idY2].layers[minLayerId].sets.Count;
+                            pointsPerBaseCluster /= BaseClustersLeft;
+
+                            if (pointsPerBaseCluster < 1)
+                                pointsPerBaseCluster = 1;
+                            minLayerId = Math.Max(minLayerId, BaseClusters[idX, idY].getLayerId(pointsPerBaseCluster));
+                            BaseClustersLeft--;
+                     */
         }
 
-        private int[] getClustersIdsByEdges(double lx, double rx, double ty, double by)
+        private int[] getBaseClustersIdsByEdges(double lx, double rx, double ty, double by)
         {
-            int li = getClusterIdX(lx);
-            int ri = getClusterIdX(rx);
-            int ti = getClusterIdY(ty);
-            int bi = getClusterIdY(by);
+            int li = getBaseClusterIdX(lx);
+            int ri = getBaseClusterIdX(rx);
+            int ti = getBaseClusterIdY(ty);
+            int bi = getBaseClusterIdY(by);
             if (li < 0)
                 li = 0;
             if (ri < 0)
@@ -174,139 +179,139 @@ namespace PointsManager
             return new int[] { li, ri, ti, bi };
         }
 
-        private Cluster getCluster(double x, double y)
+        private BaseCluster getBaseCluster(double x, double y)
         {
-            int idX = getClusterIdX(x);
-            int idY = getClusterIdY(y);
+            int idX = getBaseClusterIdX(x);
+            int idY = getBaseClusterIdY(y);
 
-            double clusterX = getClusterX(idX);
-            double clusterY = getClusterY(idY);
+            double BaseClusterX = getBaseClusterX(idX);
+            double BaseClusterY = getBaseClusterY(idY);
 
-            bool needToFill = idX < 0 || idY < 0 || idX >= clusters.GetLength(0) || idY >= clusters.GetLength(1) || clusters.Length == 0;
+            bool needToFill = idX < 0 || idY < 0 || idX >= BaseClusters.GetLength(0) || idY >= BaseClusters.GetLength(1) || BaseClusters.Length == 0;
             if (needToFill)
             {
-                fillClustersTo(idX, idY);
-                return getCluster(x, y);
+                fillBaseClustersTo(idX, idY);
+                return getBaseCluster(x, y);
             }
-            return clusters[idX, idY];
+            return BaseClusters[idX, idY];
         }
 
-        private int getClusterIdX(double x)
+        private int getBaseClusterIdX(double x)
         {
-            return (int)Math.Floor(x / clusterSize) + clustersLeft;
+            return (int)Math.Floor(x / BaseClusterSize) + BaseClustersLeft;
         }
 
-        private int getClusterIdY(double y)
+        private int getBaseClusterIdY(double y)
         {
-            return (int)Math.Floor(y / clusterSize) + clustersTop;
+            return (int)Math.Floor(y / BaseClusterSize) + BaseClustersTop;
         }
 
-        private void fillClustersTo(int idx, int idy)
+        private void fillBaseClustersTo(int idx, int idy)
         {
             int addLeft = -idx;
-            int addRight = idx - clusters.GetLength(0) + 1;
+            int addRight = idx - BaseClusters.GetLength(0) + 1;
             int addTop = -idy;
-            int addBottom = idy - clusters.GetLength(1) + 1;
+            int addBottom = idy - BaseClusters.GetLength(1) + 1;
             while (addLeft > 0)
             {
-                addClustersColumn(true);
+                addBaseClustersColumn(true);
                 addLeft--;
             }
             while (addRight > 0)
             {
-                addClustersColumn(false);
+                addBaseClustersColumn(false);
                 addRight--;
             }
             while (addTop > 0)
             {
-                addClustersRow(true);
+                addBaseClustersRow(true);
                 addTop--;
             }
             while (addBottom > 0)
             {
-                addClustersRow(false);
+                addBaseClustersRow(false);
                 addBottom--;
             }
         }
 
-        private void addClustersRow(bool before)
+        private void addBaseClustersRow(bool before)
         {
-            Cluster[,] newClusters = new Cluster[clusters.GetLength(0), clusters.GetLength(1) + 1];
+            BaseCluster[,] newBaseClusters = new BaseCluster[BaseClusters.GetLength(0), BaseClusters.GetLength(1) + 1];
             if (before)
             {
-                clustersTop++;
-                for (int x = 0; x < newClusters.GetLength(0); x++)
+                BaseClustersTop++;
+                for (int x = 0; x < newBaseClusters.GetLength(0); x++)
                 {
-                    newClusters[x, 0] = new Cluster(getClusterX(x), getClusterY(0), clusterSize, x, 0, layersCount);
-                    for (int y = 1; y < clusters.GetLength(1) + 1; y++)
+                    newBaseClusters[x, 0] = new BaseCluster(getBaseClusterX(x), getBaseClusterY(0), BaseClusterSize, x, 0, layersCount);
+                    for (int y = 1; y < BaseClusters.GetLength(1) + 1; y++)
                     {
-                        newClusters[x, y] = clusters[x, y - 1];
-                        newClusters[x, y].idY = y;
-                        newClusters[x, y].idX = x;
+                        newBaseClusters[x, y] = BaseClusters[x, y - 1];
+                        newBaseClusters[x, y].idY = y;
+                        newBaseClusters[x, y].idX = x;
                     }
                 }
             }
             else
             {
-                clustersBottom++;
-                for (int x = 0; x < newClusters.GetLength(0); x++)
+                BaseClustersBottom++;
+                for (int x = 0; x < newBaseClusters.GetLength(0); x++)
                 {
-                    int maxY = newClusters.GetLength(1) - 1;
-                    newClusters[x, maxY] = new Cluster(getClusterX(x), getClusterY(maxY), clusterSize, x, maxY, layersCount);
-                    for (int y = 0; y < clusters.GetLength(1); y++)
+                    int maxY = newBaseClusters.GetLength(1) - 1;
+                    newBaseClusters[x, maxY] = new BaseCluster(getBaseClusterX(x), getBaseClusterY(maxY), BaseClusterSize, x, maxY, layersCount);
+                    for (int y = 0; y < BaseClusters.GetLength(1); y++)
                     {
-                        newClusters[x, y] = clusters[x, y];
-                        newClusters[x, y].idY = y;
-                        newClusters[x, y].idX = x;
+                        newBaseClusters[x, y] = BaseClusters[x, y];
+                        newBaseClusters[x, y].idY = y;
+                        newBaseClusters[x, y].idX = x;
                     }
                 }
             }
-            clusters = newClusters;
+            BaseClusters = newBaseClusters;
         }
 
-        private void addClustersColumn(bool before)
+        private void addBaseClustersColumn(bool before)
         {
-            Cluster[,] newClusters = new Cluster[clusters.GetLength(0) + 1, clusters.GetLength(1)];
+            BaseCluster[,] newBaseClusters = new BaseCluster[BaseClusters.GetLength(0) + 1, BaseClusters.GetLength(1)];
             if (before)
             {
-                clustersLeft++;
-                for (int y = 0; y < newClusters.GetLength(1); y++)
+                BaseClustersLeft++;
+                for (int y = 0; y < newBaseClusters.GetLength(1); y++)
                 {
-                    newClusters[0, y] = new Cluster(getClusterX(0), getClusterY(y), clusterSize, 0, y, layersCount);
-                    for (int x = 1; x < clusters.GetLength(0) + 1; x++)
+                    newBaseClusters[0, y] = new BaseCluster(getBaseClusterX(0), getBaseClusterY(y), BaseClusterSize, 0, y, layersCount);
+                    for (int x = 1; x < BaseClusters.GetLength(0) + 1; x++)
                     {
-                        newClusters[x, y] = clusters[x - 1, y];
-                        newClusters[x, y].idY = y;
-                        newClusters[x, y].idX = x;
+                        newBaseClusters[x, y] = BaseClusters[x - 1, y];
+                        newBaseClusters[x, y].idY = y;
+                        newBaseClusters[x, y].idX = x;
                     }
                 }
             }
             else
             {
-                clustersRight++;
-                for (int y = 0; y < newClusters.GetLength(1); y++)
+                BaseClustersRight++;
+                for (int y = 0; y < newBaseClusters.GetLength(1); y++)
                 {
-                    int maxX = newClusters.GetLength(0) - 1;
-                    newClusters[maxX, y] = new Cluster(getClusterX(maxX), getClusterY(y), clusterSize, maxX, y, layersCount);
-                    for (int x = 0; x < clusters.GetLength(0); x++)
+                    int maxX = newBaseClusters.GetLength(0) - 1;
+                    newBaseClusters[maxX, y] = new BaseCluster(getBaseClusterX(maxX), getBaseClusterY(y), BaseClusterSize, maxX, y, layersCount);
+                    for (int x = 0; x < BaseClusters.GetLength(0); x++)
                     {
-                        newClusters[x, y] = clusters[x, y];
-                        newClusters[x, y].idY = y;
-                        newClusters[x, y].idX = x;
+                        newBaseClusters[x, y] = BaseClusters[x, y];
+                        newBaseClusters[x, y].idY = y;
+                        newBaseClusters[x, y].idX = x;
                     }
                 }
             }
-            clusters = newClusters;
+            BaseClusters = newBaseClusters;
         }        
         
-        private double getClusterX(int id)
+        private double getBaseClusterX(int id)
         {
-            return clusterSize * (id - clustersLeft);
+            return BaseClusterSize * (id - BaseClustersLeft);
         }
 
-        private double getClusterY(int id)
+        private double getBaseClusterY(int id)
         {
-            return clusterSize * (id - clustersTop);
+            return BaseClusterSize * (id - BaseClustersTop);
         }
 
         public void updatePoint(Pnt point, double interactRadius, int id)
@@ -317,31 +322,31 @@ namespace PointsManager
 
         private void updatePoint(DinamicPoint point)
         {
-            point.setClusters(
-                    getCluster(point.lpx, point.y),
-                    getCluster(point.rpx, point.y),
-                    getCluster(point.x, point.tpy),
-                    getCluster(point.x, point.bpy)
+            point.setBaseClusters(
+                    getBaseCluster(point.lpx, point.y),
+                    getBaseCluster(point.rpx, point.y),
+                    getBaseCluster(point.x, point.tpy),
+                    getBaseCluster(point.x, point.bpy)
                     );
         }
         private void updatePoint(DinamicPoint point, double dx, double dy, double interactRadius)
         {
-            bool clusterCrossed = point.updateTriggers(dx, dy, interactRadius);
-            if (clusterCrossed)
+            bool BaseClusterCrossed = point.updateTriggers(dx, dy, interactRadius);
+            if (BaseClusterCrossed)
                 updatePoint(point);
         }
     }                  
 
-    class ClusterEqualityComparer : IEqualityComparer<Cluster>
+    class BaseClusterEqualityComparer : IEqualityComparer<BaseCluster>
     {
-        public bool Equals(Cluster c1, Cluster c2)
+        public bool Equals(BaseCluster c1, BaseCluster c2)
         {
             return c1.idX == c2.idX && c1.idY == c2.idY;
         }
 
-        public int GetHashCode(Cluster cluster)
+        public int GetHashCode(BaseCluster BaseCluster)
         {
-            int hCode = cluster.idX ^ cluster.idY;
+            int hCode = BaseCluster.idX ^ BaseCluster.idY;
             return hCode.GetHashCode();
         }
     }

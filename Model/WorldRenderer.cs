@@ -67,11 +67,11 @@ namespace Model
                             maxPartiesRendered);
                 int clustersDrawed = 0;
                 int totalElements = 0;
-                foreach (Cluster c in world.pointsManager.clusters)                
+                foreach (BaseCluster c in world.pointsManager.BaseClusters)                
                     if (c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
                     {
                         clustersDrawed++;
-                        totalElements += c.points.Count;
+                        totalElements += c.storedPoints.Count;
                         /*Geometry g = new RectangleGeometry(
                                     new Rect(
                                         new Point(c.x, c.y),
@@ -81,10 +81,11 @@ namespace Model
                         Color color = Colors.DarkGreen;
                         ColoredGeometry cg = new ColoredGeometry(g, null, color);
                         coloredGeometry.Add(cg);*/
-                    }				
+                    }
                 //List<Protozoa> zoasToDraw = new List<Protozoa>();
                 //List<SourcePoint> sourcePointsToDraw = new List<SourcePoint>();
 
+                int setsDrawed = 0;
 				ColoredGeometry[] coloredGeometry = new ColoredGeometry[setsToDraw.Length];
 				for (int i = 0; i < setsToDraw.Length; i++)
 				{
@@ -93,16 +94,21 @@ namespace Model
 					{
 						case World.ZoaType:
 							break;
-						case World.FoodType:							
-							double size = (set.joinDist) / 2;
-							if (size < foodScale)
-								size = foodScale;
+						case World.FoodType:														
 							double alpha =
 								(foodScale * foodScale * set.points.Count) / //total food area 
 								(Math.PI * (set.joinDist / 2) * (set.joinDist / 2));
 							if (alpha > 1)
 								alpha = 1;
-							double fire = 0;
+                            if (alpha < 0.001)
+                                continue;
+
+                            setsDrawed++;
+
+                            double size = (set.joinDist) / 2;
+                            if (size < foodScale)
+                                size = foodScale;
+                            double fire = 0;
 							double grass = 0;
 							double ocean = 0;
 							double toxicity = 0;
@@ -129,7 +135,7 @@ namespace Model
 										(byte)(alpha * 255),//coeff * 255),
 										(byte)(fire / sum * 255),
 										(byte)(grass / sum * 255),
-										(byte)(ocean / sum * 255));
+										(byte)(ocean / sum * 255));							
 							ColoredGeometry cg = new ColoredGeometry(g, c, null);
 							coloredGeometry[i] = cg;
 							break;
@@ -160,8 +166,8 @@ namespace Model
                             window.Title = String.Format(
                                 "ClustersDrawed: {0}/{1}, Elements(Rendered/MaxRendered/InViewedClusters/Total): {2}/{3}/{4}/{5} " + 
 								"ElapsedTime(Calc/Render/Total): {6}/{7}/{8}ms",
-                                clustersDrawed, world.pointsManager.clusters.Length,
-                                coloredGeometry.Length, maxPartiesRendered, totalElements, world.pointsManager.points.Count,
+                                clustersDrawed, world.pointsManager.BaseClusters.Length,
+                                setsDrawed, maxPartiesRendered, totalElements, world.pointsManager.points.Count,
                                 calcTime, renderTime, calcTime + renderTime);
                     });
                 }
@@ -180,12 +186,13 @@ namespace Model
             DrawingGroup group = new DrawingGroup();
             group.Transform = new MatrixTransform(m);            
             foreach (ColoredGeometry cg in coloredGeometry)
-                group.Children.Add(
-                    new GeometryDrawing(
-                        (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
-                        (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1), 
-                        cg.g)
-                    );
+                if (cg.set == 1)
+                    group.Children.Add(
+                        new GeometryDrawing(
+                            (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
+                            (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1), 
+                            cg.g)
+                        );
             group.Freeze();
             drawingContext.DrawDrawing(group);
 
@@ -395,11 +402,13 @@ namespace Model
     {
         public Geometry g;
         public Color? brushColor, penColor;
+        public int set;
         public ColoredGeometry(Geometry g, Color? brushColor, Color? penColor)
         {
             this.g = g;
             this.brushColor = brushColor;
             this.penColor = penColor;
+            set = 1;
         }
     }
 }

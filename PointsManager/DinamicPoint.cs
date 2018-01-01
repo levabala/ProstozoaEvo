@@ -14,7 +14,7 @@ namespace PointsManager
         public int type;
         public double interactRadius;
         public bool isFreezed;
-        public Cluster[] clusters;
+        public BaseCluster[] BaseClusters;
         public DinamicPoint(double x, double y, double interactRadius, long id, int type, bool isFreezed = false)
         {
             this.x = x;
@@ -45,8 +45,8 @@ namespace PointsManager
             return leftT < 0 || rightT < 0 || topT < 0 || bottomT < 0;
         }
 
-        ClusterEqualityComparer comparer = new ClusterEqualityComparer();
-        public void setClusters(Cluster lp, Cluster rp, Cluster tp, Cluster bp)
+        BaseClusterEqualityComparer comparer = new BaseClusterEqualityComparer();
+        public void setBaseClusters(BaseCluster lp, BaseCluster rp, BaseCluster tp, BaseCluster bp)
         {
             lpx = x - interactRadius;
             rpx = x + interactRadius;
@@ -56,26 +56,26 @@ namespace PointsManager
             rightT = Math.Min(rpx - rp.x, rp.x + rp.size - rpx);
             topT = Math.Min(tpy - tp.y, tp.y + tp.size - tpy);
             bottomT = Math.Min(bpy - bp.y, bp.y + bp.size - bpy);
-            Cluster[] newClusters = new Cluster[]
+            BaseCluster[] newBaseClusters = new BaseCluster[]
             {
                 lp, rp, tp, bp
             };
 
-            if (clusters == null)
+            if (BaseClusters == null)
             {
-                foreach (Cluster c in newClusters)
+                foreach (BaseCluster c in newBaseClusters)
                     c.addPoint(this);
-                clusters = newClusters;
+                BaseClusters = newBaseClusters;
                 return;
             }
 
-            for (int i = 0; i < clusters.Length; i++)
-                if (clusters[i].idX != newClusters[i].idX || clusters[i].idY != newClusters[i].idY)
+            for (int i = 0; i < BaseClusters.Length; i++)
+                if (BaseClusters[i].idX != newBaseClusters[i].idX || BaseClusters[i].idY != newBaseClusters[i].idY)
                 {
-                    clusters[i].removePoint(id);
-                    newClusters[i].addPoint(this);
+                    BaseClusters[i].removePoint(id);
+                    newBaseClusters[i].addPoint(this);
                 }
-            clusters = newClusters;
+            BaseClusters = newBaseClusters;
         }
     }
 }
