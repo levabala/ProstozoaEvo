@@ -14,7 +14,8 @@ namespace PointsManager
         public int type;
         public double interactRadius;
         public bool isFreezed;
-        public Cluster[] clusters;
+        public Cluster[] originClusters;
+        public List<Cluster> upscaleClusters = new List<Cluster>();
         public DinamicPoint(double x, double y, double interactRadius, long id, int type, bool isFreezed = false)
         {
             this.x = x;
