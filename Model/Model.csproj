@@ -58,6 +58,10 @@
     <Compile Include="ZoaColor.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FunctionalAssembly\FunctionalAssembly.csproj">
+      <Project>{48892c1d-29e7-4d13-91e5-dce3a4e05ce7}</Project>
+      <Name>FunctionalAssembly</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MathAssembly\MathAssembly.csproj">
       <Project>{5837944e-5319-4d0b-86d5-1d0abea705e3}</Project>
       <Name>MathAssembly</Name>

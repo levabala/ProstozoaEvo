@@ -14,16 +14,12 @@ namespace PointsManager
         public int setsCount = 0;
         public int layerId = 0;
         public double joinDist = 0;
-        public Dictionary<Type, IList> pointSets = new Dictionary<Type, IList>()
-        {
-            { typeof(StaticPoint), new List<PointSet<StaticPoint>>() },
-            { typeof(DinamicPoint), new List<PointSet<DinamicPoint>>() },
-        };                
+        public PointSetsContainer container = new PointSetsContainer();
         public Layer(int layerId, double joinDist) { this.layerId = layerId; this.joinDist = joinDist; }     
 
         public void addPoint<PointType>(PointType point) where PointType : StaticPoint
         {
-            List<PointSet<PointType>> sets = pointSets[typeof(PointType)] as List<PointSet<PointType>>;
+            List<PointSet<PointType>> sets = container.Get<PointType>();
 
             pointsCount++;
             double minDx, minDy, minDist;
@@ -57,7 +53,7 @@ namespace PointsManager
 
         public void addSet<PointType>(PointSet<PointType> inSet) where PointType: StaticPoint
         {
-            List<PointSet<PointType>> sets = pointSets[typeof(PointType)] as List<PointSet<PointType>>;
+            List<PointSet<PointType>> sets = container.Get<PointType>();
 
             pointsCount++;            
             foreach (PointSet<PointType> set in sets)
@@ -78,15 +74,18 @@ namespace PointsManager
         }
 
         public PointSet<StaticPoint>[] getAllSets()
-        {
+        {            
             int size = 0;
-            foreach (List<PointSet<StaticPoint>> list in pointSets.Values)
+            foreach (IList list in container.Values)
                 size += list.Count;
             PointSet<StaticPoint>[] sets = new PointSet<StaticPoint>[size];
             int index = 0;
-            foreach (List<PointSet<StaticPoint>> list in pointSets.Values)
+            foreach (IList list in container.Values)
             {
-                list.CopyTo(sets, index);
+                List<PointSet<StaticPoint>> listOfValues = list as List<PointSet<StaticPoint>>;
+                if (listOfValues == null)
+                    continue;
+                listOfValues.CopyTo(sets, index);
                 index += list.Count;
             }
             return sets;

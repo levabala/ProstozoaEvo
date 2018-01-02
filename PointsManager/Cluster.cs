@@ -9,11 +9,7 @@ namespace PointsManager
 {
     public class Cluster
     {
-        Dictionary<Type, IDictionary> points = new Dictionary<Type, IDictionary>()
-        {
-            { typeof(StaticPoint), new Dictionary<long, StaticPoint>() },
-            { typeof(DinamicPoint), new Dictionary<long, DinamicPoint>() },
-        };
+        public DictionaryOfPointContainer container = new DictionaryOfPointContainer();
         public int pointsCount = 0;
         public Layer[] layers;
         public int idX, idY;
@@ -34,12 +30,12 @@ namespace PointsManager
         private void addPointToLayer<PointType>(PointType point, int layer) where PointType: StaticPoint
         {
             Layer currLayer = layers[layer];
-            bool nextAdd = currLayer.addPoint(point);
+            currLayer.addPoint(point);
         }
 
         public void addPoint<PointType>(PointType point) where PointType: StaticPoint
         {
-            Dictionary<long, PointType> dictionary = points[typeof(PointType)] as Dictionary<long, PointType>;
+            Dictionary<long, PointType> dictionary = container.Get<PointType>();
             if (!dictionary.ContainsKey(point.id))
             {
                 foreach (Layer layer in layers)
@@ -68,11 +64,43 @@ namespace PointsManager
         {
             for (int i = 0; i < layers.Length; i++)
             {
-                IList sets = layers[i].pointSets[typeof(PointType)];
+                IList sets = layers[i].container.Get<PointType>();
                 if (sets.Count <= maxCount)
                     return (sets as List<PointSet<PointType>>).ToArray();
             }
-            return (layers.Last().pointSets[typeof(PointType)] as List<PointSet<PointType>>).ToArray();
+            return layers.Last().container.Get<PointType>().ToArray();
+        }
+
+        public StaticPoint[] getAllPointsAsArray()
+        {
+            int size = 0;
+            foreach (List<StaticPoint> list in container.Values)
+                size += list.Count;
+            StaticPoint[] pnts = new StaticPoint[size];
+            int index = 0;
+            foreach (List<StaticPoint> list in container.Values)
+            {
+                list.CopyTo(pnts, index);
+                index += list.Count;
+            }
+            return pnts;
+        }
+
+        public List<StaticPoint> getAllPoints()
+        {
+            List<StaticPoint> list = new List<StaticPoint>();
+            foreach (List<StaticPoint> l in container.Values)
+                list.AddRange(l);
+            return list;
+        }
+
+        public bool containsPoint(long id)
+        {
+            foreach (List<StaticPoint> l in container.Values)
+                foreach (StaticPoint p in l)
+                    if (p.id == id)
+                        return true;
+            return false;
         }
     }
 }

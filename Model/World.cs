@@ -93,6 +93,7 @@ namespace Model
         object controlLocker = new object();
         public void ControlTick(double time)
         {
+            /*
             lock (protozoas) {
                 List<long> killedZoas = new List<long>();
                 List<Protozoa> newZoas = new List<Protozoa>();
@@ -169,6 +170,7 @@ namespace Model
                 foreach (Protozoa zoa in newZoas)
                     addZoa(zoa);
             }
+            */
         }
 
         long ff = 0;        
@@ -217,7 +219,7 @@ namespace Model
         {
             zoa.id = counter;
             protozoas.Add(zoa.id, zoa);
-            pointsManager.addPoint(zoa.centerP, zoa.viewDepth * zoa.radius, zoa.id, ZoaType);
+            pointsManager.addDinamicPoint(zoa.centerP, zoa.viewDepth * zoa.radius, zoa.id, ZoaType);
             counter++;
         }
         

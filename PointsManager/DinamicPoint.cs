@@ -8,17 +8,12 @@ namespace PointsManager
 {
     public class DinamicPoint : StaticPoint
     {
-        public double leftT, rightT, topT, bottomT;
-        public double lpx, rpx, tpy, bpy; 
+        public double leftT, rightT, topT, bottomT;         
         
-        public DinamicPoint(double x, double y, double interactRadius, long id, int type, Cluster[] clusters)
-            : base(x, y, interactRadius, id, type, clusters)
+        public DinamicPoint(double x, double y, double interactRadius, long id, int type)
+            : base(x, y, interactRadius, id, type)
         {            
-            leftT = rightT = topT = bottomT = 0;
-            lpx = x - interactRadius;
-            rpx = x + interactRadius;
-            tpy = y - interactRadius;
-            bpy = y + interactRadius;
+            leftT = rightT = topT = bottomT = 0;            
         }
 
         public bool updateTriggers(double dx, double dy, double interactRadius)

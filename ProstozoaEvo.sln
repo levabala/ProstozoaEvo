@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFRender", "WPFRender\WPFRender.csproj", "{140217F1-C3E9-4627-8CFE-23C18DB56B94}"
 EndProject
@@ -21,6 +21,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathAssembly", "MathAssembly\MathAssembly.csproj", "{5837944E-5319-4D0B-86D5-1D0ABEA705E3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PointsManager", "PointsManager\PointsManager.csproj", "{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionalAssembly", "FunctionalAssembly\FunctionalAssembly.csproj", "{48892C1D-29E7-4D13-91E5-DCE3A4E05CE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -56,6 +58,10 @@ Global
 		{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48892C1D-29E7-4D13-91E5-DCE3A4E05CE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48892C1D-29E7-4D13-91E5-DCE3A4E05CE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48892C1D-29E7-4D13-91E5-DCE3A4E05CE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48892C1D-29E7-4D13-91E5-DCE3A4E05CE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

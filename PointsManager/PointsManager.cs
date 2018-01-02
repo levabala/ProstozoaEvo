@@ -1,5 +1,6 @@
 ﻿using MathAssembly;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,8 @@ namespace PointsManager
     {
         public readonly Pnt ZERO;
         public readonly double clusterSize;
-        public Dictionary<long, DinamicPoint> points = new Dictionary<long, DinamicPoint>(); //int max is 2,147,483,647 so it's enough
+        public int pointsCount = 0;
+        public DictionaryOfPointContainer pointsContainer = new DictionaryOfPointContainer();
         public Cluster[,] clusters;
         public Cluster zeroCluster;
 
@@ -30,66 +32,64 @@ namespace PointsManager
             clustersLeft = clustersRight = clustersTop = clustersBottom = 0;
         }
 
-        public void addPoint(Pnt point, double interactRadius, long id, int type)
+        public void addDinamicPoint(Pnt point, double interactRadius, long id, int type)
         {
             DinamicPoint p = new DinamicPoint(point.x, point.y, interactRadius, id, type);            
             updatePoint(p);
-            points[id] = p;
+            pointsContainer.Get<DinamicPoint>()[id] = p;
+            pointsCount++;
         }
 
         public void addStaticPoint(Pnt point, long id, int type)
         {
-            DinamicPoint p = new DinamicPoint(point.x, point.y, 0, id, type, true);            
-            updatePoint(p);
-            points[id] = p;
+            StaticPoint p = new StaticPoint(point.x, point.y, 0, id, type);
+            p.setClusters(getClusters(p));
+            pointsContainer.Get<StaticPoint>()[id] = p;
+            pointsCount++;
         }
 
-        public DinamicPoint[] getNeighbors(long id)
+        public long[] getNeighbors<PointType>(long id) where PointType: StaticPoint
         {
-            DinamicPoint point = points[id];
-            //int count = 0;
-            List<DinamicPoint> nearPoints = new List<DinamicPoint>();            
+            PointType point = null;
+            if (!pointsContainer.Get<PointType>().TryGetValue(id, out point))
+                return null;
+            
+            List<long> nearPoints = new List<long>();            
             foreach (Cluster c in point.clusters)
-                foreach (DinamicPoint p in c.points.Values)
-                    nearPoints.Add(p);
-            return nearPoints.ToArray();
-            /*
-            long[] ids = new long[count];
-            int index = 0;
-            foreach (Cluster c in point.clusters)
-                foreach (DinamicPoint p in c.points.Values)
-                    ids[index] = p.id;
-            return ids;*/
+                foreach (PointType p in c.container.Get<PointType>().Values)
+                    nearPoints.Add(p.id);
+
+            return nearPoints.ToArray();            
         }
 
-        public DinamicPoint[] getPoints(double lx, double rx, double ty, double by)
+        public StaticPoint[] getPoints(double lx, double rx, double ty, double by)
         {
             int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
             return getPointsByIdBorders(ids[0], ids[1], ids[2], ids[3]);
-        }
+        }        
 
-        public DinamicPointSet[] getPointsSets(double lx, double rx, double ty, double by, int maxPointsCount)
-        {
-            int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
-            return getPointsSetsByIdBorders(ids[0], ids[1], ids[2], ids[3], maxPointsCount);
-        }
-
-        public DinamicPoint[] getPointsByIdBorders(int li, int ri, int ti, int bi)
+        public StaticPoint[] getPointsByIdBorders(int li, int ri, int ti, int bi)
         {            
-            List<DinamicPoint> output = new List<DinamicPoint>();
+            List<StaticPoint> output = new List<StaticPoint>();
             if (ri > clusters.GetLength(0) - 1)
                 ri = clusters.GetLength(0) - 1;
             if (bi > clusters.GetLength(1) - 1)
                 bi = clusters.GetLength(1) - 1;
             for (int idX = li; idX <= ri; idX++)
                 for (int idY = ti; idY <= bi; idY++)
-                    output.AddRange(clusters[idX, idY].points.Values);
+                    output.AddRange(clusters[idX, idY].getAllPoints());
             return output.ToArray(); ;
         }
 
-        public DinamicPointSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
-        {            
-            List<DinamicPointSet> output = new List<DinamicPointSet>();
+        public PointSet<StaticPoint>[] getPointsSets(double lx, double rx, double ty, double by, int maxPointsCount)
+        {
+            int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
+            return getPointsSetsByIdBorders(ids[0], ids[1], ids[2], ids[3], maxPointsCount);
+        }
+
+        public PointSet<StaticPoint>[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
+        {
+            List<PointSet<StaticPoint>> output = new List<PointSet<StaticPoint>>();
             if (ri > clusters.GetLength(0) - 1)
                 ri = clusters.GetLength(0) - 1;
             if (bi > clusters.GetLength(1) - 1)
@@ -97,8 +97,7 @@ namespace PointsManager
             int totalClusters = (ri - li + 1) * (bi - ti + 1);
             int clustersLeft = totalClusters;
             int minLayerId = 0;
-            int pointsCount = Int32.MaxValue;
-            //Cluster[,] clustersIn = new Cluster[ri - li + 1, bi - ti + 1];
+            int pointsCount = Int32.MaxValue;            
 
             while(pointsCount > maxPointsCount && minLayerId < layersCount)
             {
@@ -106,7 +105,7 @@ namespace PointsManager
                 for (int idX = li; idX <= ri; idX++)
                     for (int idY = ti; idY <= bi; idY++)
                     {
-                        pointsCount += clusters[idX, idY].layers[minLayerId].sets.Count;
+                        pointsCount += clusters[idX, idY].layers[minLayerId].setsCount;
                         if (pointsCount > maxPointsCount)
                         {                            
                             //init exit
@@ -133,9 +132,9 @@ namespace PointsManager
 
             for (int idX = li; idX <= ri; idX++)
                 for (int idY = ti; idY <= bi; idY++)                                    
-                    output.AddRange(clusters[idX, idY].layers[minLayerId].sets);
+                    output.AddRange(clusters[idX, idY].layers[minLayerId].getAllSets());
             this.minLayerId = minLayerId;
-            return output.ToArray(); ;
+            return output.ToArray();
 
             /*
              * int pointsPerCluster = maxPointsCount;
@@ -311,18 +310,36 @@ namespace PointsManager
 
         public void updatePoint(Pnt point, double interactRadius, int id)
         {
-            DinamicPoint dpoint = points[id];
+            DinamicPoint dpoint = pointsContainer.Get<DinamicPoint>()[id];
             updatePoint(dpoint, point.x - dpoint.x, point.y - dpoint.y, interactRadius);
+        }
+
+        private Cluster[] getClusters(double lpx, double x, double rpx, double tpy, double y, double bpy)
+        {
+            return new Cluster[]
+            {
+                getCluster(lpx, y),
+                getCluster(rpx, y),
+                getCluster(x, tpy),
+                getCluster(x, bpy)
+            };
+        }
+
+        private Cluster[] getClusters(StaticPoint point)
+        {
+            return new Cluster[]
+            {
+                getCluster(point.lpx, point.y),
+                getCluster(point.rpx, point.y),
+                getCluster(point.x, point.tpy),
+                getCluster(point.x, point.bpy)
+            };
         }
 
         private void updatePoint(DinamicPoint point)
         {
-            point.setClusters(
-                    getCluster(point.lpx, point.y),
-                    getCluster(point.rpx, point.y),
-                    getCluster(point.x, point.tpy),
-                    getCluster(point.x, point.bpy)
-                    );
+            Cluster[] clusters = getClusters(point);
+            point.setClusters(clusters[0], clusters[1], clusters[2], clusters[3]);
         }
         private void updatePoint(DinamicPoint point, double dx, double dy, double interactRadius)
         {
