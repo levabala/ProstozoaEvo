@@ -68,7 +68,7 @@ namespace PointsManager
             return getPointsByIdBorders(ids[0], ids[1], ids[2], ids[3]);
         }
 
-        public DinamicPointsSet[] getPointsSets(double lx, double rx, double ty, double by, int maxPointsCount)
+        public DinamicPointSet[] getPointsSets(double lx, double rx, double ty, double by, int maxPointsCount)
         {
             int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
             return getPointsSetsByIdBorders(ids[0], ids[1], ids[2], ids[3], maxPointsCount);
@@ -87,9 +87,9 @@ namespace PointsManager
             return output.ToArray(); ;
         }
 
-        public DinamicPointsSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
+        public DinamicPointSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
         {            
-            List<DinamicPointsSet> output = new List<DinamicPointsSet>();
+            List<DinamicPointSet> output = new List<DinamicPointSet>();
             if (ri > clusters.GetLength(0) - 1)
                 ri = clusters.GetLength(0) - 1;
             if (bi > clusters.GetLength(1) - 1)

@@ -42,12 +42,11 @@
   <ItemGroup>
     <Compile Include="Cluster.cs" />
     <Compile Include="DinamicPoint.cs" />
-    <Compile Include="DinamicPointsSet.cs" />
+    <Compile Include="PointSet.cs" />
     <Compile Include="PointsManager.cs" />
     <Compile Include="Layer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StaticPoint.cs" />
-    <Compile Include="StaticPointsSet.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MathAssembly\MathAssembly.csproj">

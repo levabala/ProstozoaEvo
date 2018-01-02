@@ -61,7 +61,7 @@ namespace Model
             calcWatch.Restart();
             lock (world.tickLocker)
             {                
-                DinamicPointsSet[] setsToDraw =
+                DinamicPointSet[] setsToDraw =
                         world.pointsManager.getPointsSets(
                             leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y,
                             maxPartiesRendered);
@@ -88,7 +88,7 @@ namespace Model
 				ColoredGeometry[] coloredGeometry = new ColoredGeometry[setsToDraw.Length];
 				for (int i = 0; i < setsToDraw.Length; i++)
 				{
-					DinamicPointsSet set = setsToDraw[i];
+					DinamicPointSet set = setsToDraw[i];
 					switch (set.type)
 					{
 						case World.ZoaType:
