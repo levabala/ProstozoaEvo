@@ -61,6 +61,8 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Ocean, 700);
                 worldController.addSource(SourceType.Fertility, 100);
             }
+
+            world.WorldTick(3000);
             /*worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();

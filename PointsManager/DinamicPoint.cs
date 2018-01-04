@@ -6,28 +6,14 @@ using System.Threading.Tasks;
 
 namespace PointsManager
 {
-    public class DinamicPoint
+    public class DinamicPoint : StaticPoint
     {
-        public double x, y, leftT, rightT, topT, bottomT;
-        public double lpx, rpx, tpy, bpy;
-        public long id;
-        public int type;
-        public double interactRadius;
-        public bool isFreezed;
-        public Cluster[] clusters;
-        public DinamicPoint(double x, double y, double interactRadius, long id, int type, bool isFreezed = false)
-        {
-            this.x = x;
-            this.y = y;
-            this.interactRadius = interactRadius;
-            this.id = id;
-            this.type = type;
-            this.isFreezed = isFreezed;
-            leftT = rightT = topT = bottomT = 0;
-            lpx = x - interactRadius;
-            rpx = x + interactRadius;
-            tpy = y - interactRadius;
-            bpy = y + interactRadius;
+        public double leftT, rightT, topT, bottomT;         
+        
+        public DinamicPoint(double x, double y, double interactRadius, long id, int type)
+            : base(x, y, interactRadius, id, type)
+        {            
+            leftT = rightT = topT = bottomT = 0;            
         }
 
         public bool updateTriggers(double dx, double dy, double interactRadius)
@@ -45,7 +31,7 @@ namespace PointsManager
             return leftT < 0 || rightT < 0 || topT < 0 || bottomT < 0;
         }
 
-        ClusterEqualityComparer comparer = new ClusterEqualityComparer();
+        
         public void setClusters(Cluster lp, Cluster rp, Cluster tp, Cluster bp)
         {
             lpx = x - interactRadius;

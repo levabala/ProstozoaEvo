@@ -61,7 +61,7 @@ namespace Model
             calcWatch.Restart();
             lock (world.tickLocker)
             {                
-                DinamicPointsSet[] setsToDraw =
+                PointSet<StaticPoint>[] setsToDraw =
                         world.pointsManager.getPointsSets(
                             leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y,
                             maxPartiesRendered);
@@ -71,7 +71,7 @@ namespace Model
                     if (c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
                     {
                         clustersDrawed++;
-                        totalElements += c.points.Count;
+                        totalElements += c.container.Values.Count;
                         /*Geometry g = new RectangleGeometry(
                                     new Rect(
                                         new Point(c.x, c.y),
@@ -88,7 +88,7 @@ namespace Model
 				ColoredGeometry[] coloredGeometry = new ColoredGeometry[setsToDraw.Length];
 				for (int i = 0; i < setsToDraw.Length; i++)
 				{
-					DinamicPointsSet set = setsToDraw[i];
+					PointSet<StaticPoint> set = setsToDraw[i];
 					switch (set.type)
 					{
 						case World.ZoaType:
@@ -106,7 +106,7 @@ namespace Model
 							double grass = 0;
 							double ocean = 0;
 							double toxicity = 0;
-							foreach (DinamicPoint p in set.points)
+							foreach (StaticPoint p in set.points)
 							{
 								Food f = world.food[p.id];
 								fire += f.fire;
@@ -161,7 +161,7 @@ namespace Model
                                 "ClustersDrawed: {0}/{1}, Elements(Rendered/MaxRendered/InViewedClusters/Total): {2}/{3}/{4}/{5} " + 
 								"ElapsedTime(Calc/Render/Total): {6}/{7}/{8}ms",
                                 clustersDrawed, world.pointsManager.clusters.Length,
-                                coloredGeometry.Length, maxPartiesRendered, totalElements, world.pointsManager.points.Count,
+                                coloredGeometry.Length, maxPartiesRendered, totalElements, world.pointsManager.pointsCount,
                                 calcTime, renderTime, calcTime + renderTime);
                     });
                 }
@@ -189,10 +189,12 @@ namespace Model
             group.Freeze();
             drawingContext.DrawDrawing(group);
 
-			lock (renderTimes)
-            renderTimes.Add(renderWatch.ElapsedMilliseconds);
-            if (renderTimes.Count > checkTimes)
-                renderTimes.RemoveAt(0);       
+            lock (renderTimes)
+            {
+                renderTimes.Add(renderWatch.ElapsedMilliseconds);
+                if (renderTimes.Count > checkTimes)
+                    renderTimes.RemoveAt(0);
+            }
         }
 
         /*Stopwatch renderWatch = new Stopwatch();

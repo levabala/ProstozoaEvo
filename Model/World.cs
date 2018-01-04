@@ -14,7 +14,7 @@ namespace Model
 
         public long counter = 0;
         public double simSpeed = 1;
-        public double maxSpeed = 100;
+        public double maxSpeed = 10;
         public double moveInterval, foodInterval, controlInterval, minInterval;
         public double foodRate = 10;
         public double controlRate = 10;        
@@ -40,24 +40,6 @@ namespace Model
             {
                 double foodTime, controlTime, moveTime;
                 foodTime = controlTime = moveTime = time;
-                /*while (foodTime + controlTime + moveTime >= minInterval)
-                {
-                    if (foodTime > foodInterval)
-                    {
-                        FoodTick(foodInterval);
-                        foodTime -= foodInterval;
-                    }
-                    if (controlTime > controlInterval)
-                    {
-                        ControlTick(controlInterval);
-                        controlTime -= controlInterval;
-                    }
-                    if (moveTime > moveInterval)
-                    {
-                        MoveTick(moveInterval);
-                        moveTime -= moveInterval;
-                    }                                                
-                }*/
                 while (time > minInterval)
                 {
                     FoodTick(minInterval);
@@ -93,6 +75,7 @@ namespace Model
         object controlLocker = new object();
         public void ControlTick(double time)
         {
+            /*
             lock (protozoas) {
                 List<long> killedZoas = new List<long>();
                 List<Protozoa> newZoas = new List<Protozoa>();
@@ -169,46 +152,44 @@ namespace Model
                 foreach (Protozoa zoa in newZoas)
                     addZoa(zoa);
             }
+            */
         }
 
         long ff = 0;        
         public void FoodTick(double time)
         {
-            lock (food)
+            double step = 10;
+            foreach (SourcePoint spoint in surface.sourcePoints.Values)
             {
-                double step = 10;
-                foreach (SourcePoint spoint in surface.sourcePoints.Values)
+                if (spoint.sourceType != SourceType.Fertility)
+                    continue;
+
+                double dist = 10;
+                double rate = (1 / (Math.Sqrt(dist))) * spoint.strength * time;
+                double strenght = spoint.strength;
+                double seed = rnd.NextDouble();
+                bool toSpawn = seed < rate;
+                while (dist < spoint.distance)
                 {
-                    if (spoint.sourceType != SourceType.Fertility)
-                        continue;
-
-                    double dist = 10;
-                    double rate = (1 / (Math.Sqrt(dist))) * spoint.strength * time;
-                    double strenght = spoint.strength;
-                    double seed = rnd.NextDouble();
-                    bool toSpawn = seed < rate;
-                    while (dist < spoint.distance)
+                    if (seed < (1 / (Math.Sqrt(dist))) * strenght * time)
                     {
-                        if (seed < (1 / (Math.Sqrt(dist))) * strenght * time)
-                        {
-                            double alpha = rnd.NextDouble() * Math.PI * 2;
-                            Pnt foodPoint = Vector.GetEndPoint(spoint.location, alpha, dist);
-                            double fire = surface.getEffectAtPoint(foodPoint, SourceType.Fire);
-                            double grass = surface.getEffectAtPoint(foodPoint, SourceType.Grass);
-                            double ocean = surface.getEffectAtPoint(foodPoint, SourceType.Ocean);
-                            double toxicity = surface.getEffectAtPoint(foodPoint, SourceType.Toxicity);
-                            Food f = new Food(foodPoint, fire, grass, ocean, toxicity);
-                            addFood(f);
+                        double alpha = rnd.NextDouble() * Math.PI * 2;
+                        Pnt foodPoint = Vector.GetEndPoint(spoint.location, alpha, dist);
+                        double fire = surface.getEffectAtPoint(foodPoint, SourceType.Fire);
+                        double grass = surface.getEffectAtPoint(foodPoint, SourceType.Grass);
+                        double ocean = surface.getEffectAtPoint(foodPoint, SourceType.Ocean);
+                        double toxicity = surface.getEffectAtPoint(foodPoint, SourceType.Toxicity);
+                        Food f = new Food(foodPoint, fire, grass, ocean, toxicity);
+                        addFood(f);
 
-                            ff = 0;
-                            strenght /= 2;
-                        }
-                        else ff++;
-
-                        seed = rnd.NextDouble();
-                        dist += step;
-                        rate = (1 / dist) * spoint.strength * time;
+                        ff = 0;
+                        strenght /= 2;
                     }
+                    else ff++;
+
+                    seed = rnd.NextDouble();
+                    dist += step;
+                    rate = (1 / dist) * spoint.strength * time;
                 }
             }
         }
@@ -217,7 +198,7 @@ namespace Model
         {
             zoa.id = counter;
             protozoas.Add(zoa.id, zoa);
-            pointsManager.addPoint(zoa.centerP, zoa.viewDepth * zoa.radius, zoa.id, ZoaType);
+            pointsManager.addDinamicPoint(zoa.centerP, zoa.viewDepth * zoa.radius, zoa.id, ZoaType);
             counter++;
         }
         
