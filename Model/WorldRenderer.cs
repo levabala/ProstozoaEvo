@@ -189,10 +189,12 @@ namespace Model
             group.Freeze();
             drawingContext.DrawDrawing(group);
 
-			lock (renderTimes)
-            renderTimes.Add(renderWatch.ElapsedMilliseconds);
-            if (renderTimes.Count > checkTimes)
-                renderTimes.RemoveAt(0);       
+            lock (renderTimes)
+            {
+                renderTimes.Add(renderWatch.ElapsedMilliseconds);
+                if (renderTimes.Count > checkTimes)
+                    renderTimes.RemoveAt(0);
+            }
         }
 
         /*Stopwatch renderWatch = new Stopwatch();

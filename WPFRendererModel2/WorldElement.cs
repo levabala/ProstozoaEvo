@@ -69,14 +69,7 @@ namespace WPFRendererModel2
             new Task(() =>
             {
                 while (running)
-                {
-                    Matrix invMatrix = matrix;
-                    invMatrix.Invert();
-                    Point leftTopView = invMatrix.Transform(new Point(0, 0));
-                    Point rightBottomView = invMatrix.Transform(new Point(container.ActualWidth, container.ActualHeight));
-                    coloredGeometry = renderer.GetGeometries(leftTopView, rightBottomView, mainWindow);//, matrix);
-                                                                                                       /*lock (coloredGeometry)
-                                                                                                           coloredGeometry = cg.ToArray();*/
+                {                    
                     try
                     {
                         Dispatcher.Invoke(() =>
@@ -85,6 +78,12 @@ namespace WPFRendererModel2
                         });
                     }
                     catch (Exception e) { }
+
+                    Matrix invMatrix = matrix;
+                    invMatrix.Invert();
+                    Point leftTopView = invMatrix.Transform(new Point(0, 0));
+                    Point rightBottomView = invMatrix.Transform(new Point(container.ActualWidth, container.ActualHeight));
+                    coloredGeometry = renderer.GetGeometries(leftTopView, rightBottomView, mainWindow);
                 }
             }).Start();            
 
