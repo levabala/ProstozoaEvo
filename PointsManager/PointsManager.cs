@@ -81,15 +81,15 @@ namespace PointsManager
             return output.ToArray(); ;
         }
 
-        public PointSet[] getPointsSets(double lx, double rx, double ty, double by, int maxPointsCount)
+        public PointSet<StaticPoint>[] getPointsSets(double lx, double rx, double ty, double by, int maxPointsCount)
         {
             int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
             return getPointsSetsByIdBorders(ids[0], ids[1], ids[2], ids[3], maxPointsCount);
         }
 
-        public PointSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
+        public PointSet<StaticPoint>[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
         {
-            List<PointSet> output = new List<PointSet>();
+            List<PointSet<StaticPoint>> output = new List<PointSet<StaticPoint>>();
             if (ri > clusters.GetLength(0) - 1)
                 ri = clusters.GetLength(0) - 1;
             if (bi > clusters.GetLength(1) - 1)
