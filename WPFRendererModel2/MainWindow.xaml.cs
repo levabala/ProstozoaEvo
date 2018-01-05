@@ -49,10 +49,10 @@ namespace WPFRendererModel2
                 }
             };
 
-            //worldElement.setWorldRenderer(worldRenderer);
-            //mainCanvas.Children.Add(worldElement);
+            worldElement.setWorldRenderer(worldRenderer);
+            mainCanvas.Children.Add(worldElement);
 
-            for (int i = 0; i < 150; i++)
+            for (int i = 0; i < 100; i++)
             {
                 worldController.addSource(SourceType.Fire, 700);
                 worldController.addSource(SourceType.Fertility, 100);
@@ -62,7 +62,7 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Fertility, 100);
             }
 
-            int count = 10;
+            int count = 100;
             mainProgressBar.Value = 0;
             new Task(() =>
             {                
@@ -77,14 +77,6 @@ namespace WPFRendererModel2
                 }
                 onUI(() => mainProgressBar.Value = 1);
             }).Start();            
-
-            /*worldController.addNewZoa();
-            worldController.addNewZoa();
-            worldController.addNewZoa();
-            worldController.addNewZoa();
-            worldController.addNewZoa();*/
-
-            //worldController.Resume();
         }
 
         private void onUI(Action act)

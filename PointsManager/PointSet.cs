@@ -7,17 +7,15 @@ using xxHashSharp;
 
 namespace PointsManager
 {
-    public class PointSet<PointType> where PointType : ManagedPoint
+    public class PointSet
     {
-        public Type SetType = typeof(PointType);
-
         public uint hash = 0; //(changes count)
         public Guid guid = Guid.NewGuid();
         public double x, y;
         public int type;
         public double joinDist;
         public List<ManagedPoint> points = new List<ManagedPoint>();
-        public PointSet(PointType point, double joinDist) 
+        public PointSet(ManagedPoint point, double joinDist) 
         {                                 
             this.joinDist = joinDist;
             x = point.x;
@@ -27,12 +25,12 @@ namespace PointsManager
             points.Add(point);            
         }
 
-        public void addPoint(PointType point)            
+        public void addPoint(ManagedPoint point)            
         {
             addPoint(point, point.x - x, point.y - y);            
         }
 
-        public void addSet(PointSet<PointType> set, double dx, double dy)
+        public void addSet(PointSet set, double dx, double dy)
         {
             double w1 = points.Count;
             double w2 = set.points.Count;

@@ -159,10 +159,12 @@ namespace Model
         public void FoodTick(double time)
         {
             double step = 10;
-            foreach (SourcePoint spoint in surface.sourcePoints.Values)
+            //foreach (SourcePoint spoint in surface.sourcePoints.Values)
+            Parallel.ForEach(surface.sourcePoints.Values, (spoint) =>
             {
                 if (spoint.sourceType != SourceType.Fertility)
-                    continue;
+                    //continue;
+                    return;
 
                 double dist = 10;
                 double rate = (1 / (Math.Sqrt(dist))) * spoint.strength * time;
@@ -191,7 +193,7 @@ namespace Model
                     dist += step;
                     rate = (1 / dist) * spoint.strength * time;
                 }
-            }
+            });
         }
 
         public void addZoa(Protozoa zoa)
@@ -201,13 +203,17 @@ namespace Model
             pointsManager.addDinamicPoint(zoa.centerP, zoa.viewDepth * zoa.radius, zoa.id, ZoaType);
             counter++;
         }
-        
+
+        Object foodAddLocker = new Object();
         public void addFood(Food f)
         {
-            f.id = counter;
-            food.Add(f.id, f);
-            pointsManager.addStaticPoint(f.point, f.id, FoodType);
-            counter++;
+            lock (foodAddLocker)
+            {
+                f.id = counter;
+                food.Add(f.id, f);
+                pointsManager.addStaticPoint(f.point, f.id, FoodType);
+                counter++;
+            }
         }
 
         public void addZoa(int distance)

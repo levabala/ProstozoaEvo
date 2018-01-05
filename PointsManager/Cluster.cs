@@ -60,13 +60,13 @@ namespace PointsManager
             //here removing from layers, common dictionary..
         }
 
-        public PointSet<PointType>[] getPointSets<PointType>(int maxCount) where PointType : ManagedPoint
+        public PointSet[] getPointSets<PointType>(int maxCount) where PointType : ManagedPoint
         {
             for (int i = 0; i < layers.Length; i++)
             {
                 IList sets = layers[i].container.Get<PointType>();
                 if (sets.Count <= maxCount)
-                    return (sets as List<PointSet<PointType>>).ToArray();
+                    return (sets as List<PointSet>).ToArray();
             }
             return layers.Last().container.Get<PointType>().ToArray();
         }
