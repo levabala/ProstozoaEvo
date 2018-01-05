@@ -19,7 +19,7 @@ namespace PointsManager
 
         public void addPoint<PointType>(PointType point) where PointType : ManagedPoint
         {
-            List<PointSet<PointType>> sets = container.Get<PointType>();
+            List<PointSet> sets = container.Get<PointType>();
 
             pointsCount++;
             double minDx, minDy, minDist;
@@ -27,7 +27,7 @@ namespace PointsManager
             minDist = minDx = minDy = joinDist;
             for (int i = 0; i < sets.Count; i++)
             {
-                PointSet<PointType> set = sets[i];
+                PointSet set = sets[i];
                 if (set.type != point.type)
                     continue;
                 double dx = point.x - set.x;
@@ -46,17 +46,17 @@ namespace PointsManager
                 sets[minId].addPoint(point, minDx, minDy);
                 return;
             }
-            PointSet<PointType> newSet = new PointSet<PointType>(point, joinDist);
+            PointSet newSet = new PointSet(point, joinDist);
             sets.Add(newSet);
             setsCount++;            
         }
 
-        public void addSet<PointType>(PointSet<PointType> inSet) where PointType : ManagedPoint
+        public void addSet<PointType>(PointSet inSet) where PointType : ManagedPoint
         {
-            List<PointSet<PointType>> sets = container.Get<PointType>();
+            List<PointSet> sets = container.Get<PointType>();
 
             pointsCount++;            
-            foreach (PointSet<PointType> set in sets)
+            foreach (PointSet set in sets)
             {
                 if (set.type != inSet.type)
                     continue;
@@ -73,16 +73,16 @@ namespace PointsManager
             setsCount++;
         }
 
-        public PointSet<StaticPoint>[] getAllSets()
+        public PointSet[] getAllSets()
         {            
             int size = 0;
             foreach (IList list in container.Values)
                 size += list.Count;
-            PointSet<StaticPoint>[] sets = new PointSet<StaticPoint>[size];
+            PointSet[] sets = new PointSet[size];
             int index = 0;
             foreach (IList list in container.Values)
             {
-                List<PointSet<StaticPoint>> listOfValues = list as List<PointSet<StaticPoint>>;
+                List<PointSet> listOfValues = list as List<PointSet>;
                 if (listOfValues == null)
                     continue;
                 listOfValues.CopyTo(sets, index);

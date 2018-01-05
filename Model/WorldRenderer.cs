@@ -72,7 +72,7 @@ namespace Model
             {
                 calcOtherWatch.Restart();
                 calcWatch.Restart();                
-                PointSet<StaticPoint>[] setsToDraw =
+                PointSet[] setsToDraw =
                         world.pointsManager.getPointsSets(
                             leftTopView.X, rightBottomView.X, leftTopView.Y, rightBottomView.Y,
                             maxPartiesRendered);
@@ -107,8 +107,8 @@ namespace Model
                 //Parallel.For(0, coloredGeometry.Length - 1, (i) =>
                 for (int i = 0; i < coloredGeometry.Length; i++)
                 {
-                    PointSet<StaticPoint> set = setsToDraw[i];
-                    
+                    PointSet set = setsToDraw[i];
+                    if ((set as PointSet<DinamicPoint>) != null)
                     switch (set.type)
                     {
                         case World.ZoaType:
