@@ -24,7 +24,7 @@ namespace PointsManager
             layers = new Layer[layersCount];
             double joinStep = size / layersCount;            
             for (int i = 0; i < layers.Length; i++)
-                layers[i] = new Layer(i, joinStep * i);
+                layers[i] = new Layer(i, joinStep * (i + 1));
         }
 
         private void addPointToLayer<PointType>(PointType point, int layer) where PointType : ManagedPoint

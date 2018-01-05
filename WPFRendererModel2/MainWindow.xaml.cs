@@ -29,7 +29,7 @@ namespace WPFRendererModel2
         }
 
         private void init()
-        {
+        {            
             Random rnd = new Random();
             World world = new World();
             WorldRenderer worldRenderer = new WorldRenderer(world);
@@ -49,8 +49,8 @@ namespace WPFRendererModel2
                 }
             };
 
-            worldElement.setWorldRenderer(worldRenderer);
-            mainCanvas.Children.Add(worldElement);
+            //worldElement.setWorldRenderer(worldRenderer);
+            //mainCanvas.Children.Add(worldElement);
 
             for (int i = 0; i < 150; i++)
             {
@@ -62,8 +62,22 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Fertility, 100);
             }
 
-            for (int i = 0; i < 10; i++)
-                world.FoodTick(500);    
+            int count = 10;
+            mainProgressBar.Value = 0;
+            new Task(() =>
+            {                
+                for (int i = 0; i < count; i++)
+                {
+                    lock (world.tickLocker)
+                        world.FoodTick(1000);
+                    onUI(() => {
+                        mainProgressBar.Value = (double)i / count;
+                        Title = world.food.Values.Count.ToString();
+                        });
+                }
+                onUI(() => mainProgressBar.Value = 1);
+            }).Start();            
+
             /*worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();
@@ -71,6 +85,18 @@ namespace WPFRendererModel2
             worldController.addNewZoa();*/
 
             //worldController.Resume();
+        }
+
+        private void onUI(Action act)
+        {
+            Dispatcher.Invoke(act);
+        }
+
+        private delegate void NoArgDelegate();    
+        public static void Refresh(DependencyObject obj)
+        {
+            obj.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+                (NoArgDelegate)delegate { });
         }
     }
 }

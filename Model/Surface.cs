@@ -74,6 +74,25 @@ namespace Model
             return effect;
         }
 
+        public Dictionary<SourceType, double> getEffectAtPoint(Pnt point, SourceType[] stypes)
+        {
+            Dictionary<SourceType, double> effects = new Dictionary<SourceType, double>();
+            foreach (SourceType stype in stypes)
+                effects[stype] = 0;
+            foreach (SourcePoint sp in sourcePoints.Values)
+            {
+                if (!effects.ContainsKey(sp.sourceType))
+                    continue;
+
+                double dist = Vector.GetLength(point, sp.location);
+                if (dist == 0)
+                    continue;
+                double coeff = 1 / dist;
+                effects[sp.sourceType] += coeff * sp.strength;
+            }
+            return effects;
+        }
+
         public Pnt getRandomPoint(Random rnd, int maxDistance)
         {
             if (sourcePoints.Count == 0)

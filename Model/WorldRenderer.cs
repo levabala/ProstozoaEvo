@@ -18,7 +18,8 @@ namespace Model
     {
         public World world;
 
-        Dictionary<Guid, ColoredGeometry> geometryCache = new Dictionary<Guid, ColoredGeometry>();
+        Dictionary<Guid, uint> setsHashes = new Dictionary<Guid, uint>();
+        Dictionary<Guid, ColoredGeometry> geometriesCache = new Dictionary<Guid, ColoredGeometry>();
 
         public double foodScale = 3;
         public double foodMaxDensity = Math.Pow(3, 3);
@@ -66,6 +67,8 @@ namespace Model
         List<double> foodGetTimes = new List<double>();
         List<double> createGeometryTimes = new List<double>();
         List<double> renderTimes = new List<double>();
+
+        
         public ColoredGeometry[] GetGeometries(Point leftTopView, Point rightBottomView, Window window)//, Matrix m)
         {						            
             lock (world.tickLocker)
@@ -104,26 +107,39 @@ namespace Model
                 double foodGetTime = 0;
                 int foodGetCount = 0;
                 double createGeometryTime = 0;
-                //Parallel.For(0, coloredGeometry.Length - 1, (i) =>
+                //Parallel.For(0, coloredGeometry.Length - 1, (i) =>                
                 for (int i = 0; i < coloredGeometry.Length; i++)
                 {
-                    PointSet<StaticPoint> set = setsToDraw[i];
-                    
+                    PointSet<StaticPoint> set = setsToDraw[i];                    
+
+                    ColoredGeometry cg = new ColoredGeometry();
+
+                    uint oldHash, nowHash;
+                    setsHashes.TryGetValue(set.guid, out oldHash);
+                    nowHash = set.hash;
+                    if (oldHash == nowHash)
+                    {
+                        bool exist = geometriesCache.TryGetValue(set.guid, out coloredGeometry[i]);
+                        if (exist)
+                            continue;
+                    }
+                    setsHashes[set.guid] = nowHash;
+
                     switch (set.type)
                     {
                         case World.ZoaType:
                             break;
-                        case World.FoodType:
+                        case World.FoodType:                            
                             double size = (set.joinDist) / 2;
-                            if (size < foodScale)
-                                size = foodScale;
+                            /*if (size < foodScale)
+                                size = foodScale;*/
                             double alpha =
                                 (foodScale * foodScale * set.points.Count) / //total food area 
                                 (Math.PI * (set.joinDist / 2) * (set.joinDist / 2));
                             if (alpha > 1)
                                 alpha = 1;
                             if (alpha < 0.01)
-                                continue;
+                                break;
                                 //return;
                             coloredGeometrySetLength++;
 
@@ -161,10 +177,11 @@ namespace Model
                                         (byte)(fire / sum * 255),
                                         (byte)(grass / sum * 255),
                                         (byte)(ocean / sum * 255));
-                            ColoredGeometry cg = new ColoredGeometry(g, c, null);
+                            cg = new ColoredGeometry(g, c, null);
                             coloredGeometry[i] = cg;
                             break;
                     }
+                    geometriesCache[set.guid] = cg;
                 }//);
                 createGeometryTime /= coloredGeometrySetLength;
                 foodGetTime /= foodGetCount;
