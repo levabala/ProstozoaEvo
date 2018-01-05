@@ -18,7 +18,7 @@ namespace PointsManager
         }
         public Dictionary<Type, IList> pointSets = new Dictionary<Type, IList>()
         {
-            { typeof(StaticPoint), new List<PointSet<StaticPoint>>() },
+            { typeof(StaticPoint), new List<PointSet>() },
             { typeof(DinamicPoint), new List<PointSet<DinamicPoint>>() },
         };
 
@@ -27,9 +27,9 @@ namespace PointsManager
             
         }
 
-        public List<PointSet<PointType>> Get<PointType>() where PointType : ManagedPoint
+        public List<PointSet> Get<PointType>() where PointType : ManagedPoint
         {
-            return pointSets[typeof(PointType)] as List<PointSet<PointType>>;
+            return pointSets[typeof(PointType)] as List<PointSet>;
         }
     }
 
