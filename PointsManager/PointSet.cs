@@ -6,14 +6,15 @@ using System.Threading.Tasks;
 
 namespace PointsManager
 {
-    public class PointSet<PointType> where PointType : StaticPoint
+    public class PointSet
     {
+        public Guid guid = new Guid();
         public double x, y;
         public int type;
         public double joinDist;
-        public List<PointType> points = new List<PointType>();
-        public PointSet(PointType point, double joinDist)
-        {
+        public List<ManagedPoint> points = new List<ManagedPoint>();
+        public PointSet(ManagedPoint point, double joinDist)
+        {            
             this.joinDist = joinDist;
             x = point.x;
             y = point.y;
@@ -21,7 +22,7 @@ namespace PointsManager
             points.Add(point);
         }
 
-        public void addPoint(PointType point)
+        public void addPoint(ManagedPoint point)
         {
             double weight = points.Count;
             x += (point.x - x) / weight;
@@ -29,7 +30,7 @@ namespace PointsManager
             points.Add(point);
         }
 
-        public void addSet(PointSet<PointType> set, double dx, double dy)
+        public void addSet(PointSet set, double dx, double dy)
         {
             double w1 = points.Count;
             double w2 = set.points.Count;
@@ -39,7 +40,7 @@ namespace PointsManager
             points.AddRange(set.points);
         }
 
-        public void addPoint(PointType point, double dx, double dy)
+        public void addPoint(ManagedPoint point, double dx, double dy)
         {
             double weight = points.Count;
             x += dx / weight;

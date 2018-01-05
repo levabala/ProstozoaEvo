@@ -12,7 +12,7 @@ namespace PointsManager
     {
         public readonly Pnt ZERO;
         public readonly double clusterSize;
-        public int pointsCount = 0;
+        public int pointsCount = 0;        
         public DictionaryOfPointContainer pointsContainer = new DictionaryOfPointContainer();
         public Cluster[,] clusters;
         public Cluster zeroCluster;
@@ -48,7 +48,7 @@ namespace PointsManager
             pointsCount++;
         }
 
-        public long[] getNeighbors<PointType>(long id) where PointType: StaticPoint
+        public long[] getNeighbors<PointType>(long id) where PointType : ManagedPoint
         {
             PointType point = null;
             if (!pointsContainer.Get<PointType>().TryGetValue(id, out point))
@@ -325,7 +325,7 @@ namespace PointsManager
             };
         }
 
-        private Cluster[] getClusters(StaticPoint point)
+        private Cluster[] getClusters(ManagedPoint point)
         {
             return new Cluster[]
             {

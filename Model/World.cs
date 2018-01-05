@@ -14,11 +14,11 @@ namespace Model
 
         public long counter = 0;
         public double simSpeed = 1;
-        public double maxSpeed = 10;
+        public double maxSpeed = 1;
         public double moveInterval, foodInterval, controlInterval, minInterval;
         public double foodRate = 10;
         public double controlRate = 10;        
-        public double maxMoveLength = 10; //pixels        
+        public double maxMoveLength = 100; //pixels        
 
         Random rnd = new Random();
         public Dictionary<long, Protozoa> protozoas = new Dictionary<long, Protozoa>();

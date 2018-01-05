@@ -27,7 +27,7 @@ namespace PointsManager
             
         }
 
-        public List<PointSet<PointType>> Get<PointType>() where PointType: StaticPoint
+        public List<PointSet<PointType>> Get<PointType>() where PointType : ManagedPoint
         {
             return pointSets[typeof(PointType)] as List<PointSet<PointType>>;
         }
@@ -53,7 +53,7 @@ namespace PointsManager
 
         }
 
-        public List<PointType> Get<PointType>() where PointType : StaticPoint
+        public List<PointType> Get<PointType>() where PointType : ManagedPoint
         {
             return pointSets[typeof(PointType)] as List<PointType>;
         }
@@ -78,7 +78,7 @@ namespace PointsManager
 
         }
 
-        public Dictionary<long, PointType> Get<PointType>() where PointType : StaticPoint
+        public Dictionary<long, PointType> Get<PointType>() where PointType : ManagedPoint
         {
             return dictionaries[typeof(PointType)] as Dictionary<long, PointType>;
         }

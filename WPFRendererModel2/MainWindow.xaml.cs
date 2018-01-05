@@ -52,7 +52,7 @@ namespace WPFRendererModel2
             worldElement.setWorldRenderer(worldRenderer);
             mainCanvas.Children.Add(worldElement);
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 150; i++)
             {
                 worldController.addSource(SourceType.Fire, 700);
                 worldController.addSource(SourceType.Fertility, 100);
@@ -62,14 +62,15 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Fertility, 100);
             }
 
-            world.WorldTick(3000);
+            for (int i = 0; i < 10; i++)
+                world.FoodTick(500);    
             /*worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();
             worldController.addNewZoa();*/
 
-            worldController.Resume();
+            //worldController.Resume();
         }
     }
 }

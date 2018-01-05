@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="Cluster.cs" />
     <Compile Include="DinamicPoint.cs" />
+    <Compile Include="ManagedPoint.cs" />
     <Compile Include="PointSet.cs" />
     <Compile Include="PointsContainers.cs" />
     <Compile Include="PointsManager.cs" />

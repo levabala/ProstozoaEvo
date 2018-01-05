@@ -17,7 +17,7 @@ namespace PointsManager
         public PointSetsContainer container = new PointSetsContainer();
         public Layer(int layerId, double joinDist) { this.layerId = layerId; this.joinDist = joinDist; }     
 
-        public void addPoint<PointType>(PointType point) where PointType : StaticPoint
+        public void addPoint<PointType>(PointType point) where PointType : ManagedPoint
         {
             List<PointSet<PointType>> sets = container.Get<PointType>();
 
@@ -51,7 +51,7 @@ namespace PointsManager
             setsCount++;            
         }
 
-        public void addSet<PointType>(PointSet<PointType> inSet) where PointType: StaticPoint
+        public void addSet<PointType>(PointSet<PointType> inSet) where PointType : ManagedPoint
         {
             List<PointSet<PointType>> sets = container.Get<PointType>();
 

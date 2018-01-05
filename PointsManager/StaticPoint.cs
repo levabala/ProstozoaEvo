@@ -6,33 +6,19 @@ using System.Threading.Tasks;
 
 namespace PointsManager
 {
-    public class StaticPoint
-    {
-        public double x, y;
-        public double lpx, rpx, tpy, bpy;
-        public long id;
-        public int type;
-        public double interactRadius;        
-        public Cluster[] clusters = new Cluster[0];
-
+    public class StaticPoint : ManagedPoint
+    {        
         public StaticPoint(
             double x, double y, double interactRadius, long id, int type)
+            : base(x,y,interactRadius,id,type)
         {
-            this.x = x;
-            this.y = y;
-            this.interactRadius = interactRadius;
-            this.id = id;
-            this.type = type;           
-            lpx = x - interactRadius;
-            rpx = x + interactRadius;
-            tpy = y - interactRadius;
-            bpy = y + interactRadius;            
+            
         }
 
-        public void setClusters(Cluster[] clusters)
+        public override void setClusters(Cluster[] clusters)
         {
             this.clusters = clusters;
-            foreach (Cluster c in clusters)                
+            foreach (Cluster c in clusters)
                 c.addPoint(this);
         }
     }

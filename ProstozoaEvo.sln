@@ -10,13 +10,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{128E4C9E-ED27-4CE9-B36D-A2117EFF57EC}"
 	ProjectSection(SolutionItems) = preProject
 		Performance1.psess = Performance1.psess
+		Performance2.psess = Performance2.psess
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Model", "Model\Model.csproj", "{796614BB-6CB8-4ABB-AE34-84220BC22FE5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFRendererModel2", "WPFRendererModel2\WPFRendererModel2.csproj", "{36F7E990-67F5-40CF-9B05-594556E547E4}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestModel", "UnitTestModel\UnitTestModel.csproj", "{6692A4F5-71E8-402B-B985-854C65DBF112}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathAssembly", "MathAssembly\MathAssembly.csproj", "{5837944E-5319-4D0B-86D5-1D0ABEA705E3}"
 EndProject
@@ -25,6 +24,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionalAssembly", "FunctionalAssembly\FunctionalAssembly.csproj", "{48892C1D-29E7-4D13-91E5-DCE3A4E05CE7}"
 EndProject
 Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -46,10 +48,6 @@ Global
 		{36F7E990-67F5-40CF-9B05-594556E547E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36F7E990-67F5-40CF-9B05-594556E547E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36F7E990-67F5-40CF-9B05-594556E547E4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6692A4F5-71E8-402B-B985-854C65DBF112}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6692A4F5-71E8-402B-B985-854C65DBF112}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6692A4F5-71E8-402B-B985-854C65DBF112}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6692A4F5-71E8-402B-B985-854C65DBF112}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5837944E-5319-4D0B-86D5-1D0ABEA705E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5837944E-5319-4D0B-86D5-1D0ABEA705E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5837944E-5319-4D0B-86D5-1D0ABEA705E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -68,6 +66,12 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8535149A-E998-4070-8972-8A88CF975623}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

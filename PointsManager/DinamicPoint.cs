@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PointsManager
 {
-    public class DinamicPoint : StaticPoint
+    public class DinamicPoint : ManagedPoint
     {
         public double leftT, rightT, topT, bottomT;         
         
@@ -31,7 +31,13 @@ namespace PointsManager
             return leftT < 0 || rightT < 0 || topT < 0 || bottomT < 0;
         }
 
-        
+        public override void setClusters(Cluster[] clusters)
+        {
+            this.clusters = clusters;
+            foreach (Cluster c in clusters)
+                c.addPoint(this);
+        }        
+
         public void setClusters(Cluster lp, Cluster rp, Cluster tp, Cluster bp)
         {
             lpx = x - interactRadius;

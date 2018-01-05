@@ -27,13 +27,13 @@ namespace PointsManager
                 layers[i] = new Layer(i, joinStep * i);
         }
 
-        private void addPointToLayer<PointType>(PointType point, int layer) where PointType: StaticPoint
+        private void addPointToLayer<PointType>(PointType point, int layer) where PointType : ManagedPoint
         {
             Layer currLayer = layers[layer];
             currLayer.addPoint(point);
         }
 
-        public void addPoint<PointType>(PointType point) where PointType: StaticPoint
+        public void addPoint<PointType>(PointType point) where PointType : ManagedPoint
         {
             Dictionary<long, PointType> dictionary = container.Get<PointType>();
             if (!dictionary.ContainsKey(point.id))
@@ -60,7 +60,7 @@ namespace PointsManager
             //here removing from layers, common dictionary..
         }
 
-        public PointSet<PointType>[] getPointSets<PointType>(int maxCount) where PointType: StaticPoint
+        public PointSet<PointType>[] getPointSets<PointType>(int maxCount) where PointType : ManagedPoint
         {
             for (int i = 0; i < layers.Length; i++)
             {

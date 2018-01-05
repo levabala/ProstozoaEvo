@@ -9,17 +9,21 @@ namespace Model
 {
     public class Surface
     {
+        public Dictionary<SourceType, List<long>> sourcePointsTyped = new Dictionary<SourceType, List<long>>();
         public Dictionary<long, SourcePoint> sourcePoints = new Dictionary<long, SourcePoint>();
         double leftB, topB, rightB, bottomB;        
 
         public Surface()
         {
-
+            var possibleTypes = Enum.GetValues(typeof(SourceType));
+            foreach (SourceType stype in possibleTypes)
+                sourcePointsTyped[stype] = new List<long>();
         }
 
         public void addSourcePoint(SourcePoint spoint)
         {            
-            sourcePoints.Add(spoint.id, spoint);
+            sourcePointsTyped[spoint.sourceType].Add(spoint.id);
+            sourcePoints.Add(spoint.id, spoint);            
             if (sourcePoints.Count == 1)
             {
                 leftB = rightB = spoint.location.x;
@@ -58,10 +62,9 @@ namespace Model
         public double getEffectAtPoint(Pnt point, SourceType stype)
         {
             double effect = 0;
-            foreach (SourcePoint sp in sourcePoints.Values)
+            foreach (long id in sourcePointsTyped[stype])
             {
-                if (sp.sourceType != stype)
-                    continue;
+                SourcePoint sp = sourcePoints[id];
                 double dist = Vector.GetLength(point, sp.location);
                 if (dist == 0)
                     continue;
@@ -128,7 +131,7 @@ namespace Model
     {
         public static Dictionary<SourceType, Range> rangesStrength = new Dictionary<SourceType, Range>()
         {
-            { SourceType.Fertility, new Range(0.001, 0.01) },//new Range(0.001, 0.01) },
+            { SourceType.Fertility, new Range(0.01, 0.1) },//new Range(0.001, 0.01) },
             { SourceType.Toxicity, new Range(0, 1) },
             { SourceType.Viscosity, new Range(0, 1) },
             { SourceType.Fire, new Range(0, 1) },
