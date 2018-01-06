@@ -15,6 +15,8 @@ namespace PointsManager
         public int type;
         public double joinDist;
         public List<ManagedPoint> points = new List<ManagedPoint>();
+        object locker = new object();
+
         public PointSet(ManagedPoint point, double joinDist) 
         {                                 
             this.joinDist = joinDist;
@@ -37,7 +39,11 @@ namespace PointsManager
             double coeff = w2 / (w2 + w1);
             x += coeff * dx;
             y += coeff * dy;
-            points.AddRange(set.points);
+            lock (locker)
+            {
+                points.AddRange(set.points);
+                hash++;
+            }
         }
 
         public void addPoint(ManagedPoint point, double dx, double dy)
@@ -45,8 +51,10 @@ namespace PointsManager
             double weight = points.Count;
             x += dx / weight;
             y += dy / weight;
-            points.Add(point);
-            hash++;
+            lock (locker)
+            {
+                points.Add(point);
+            }
         }
 
         private byte[] Combine(params byte[][] arrays)

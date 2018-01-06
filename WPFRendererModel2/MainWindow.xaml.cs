@@ -62,26 +62,33 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Fertility, 100);
             }
 
-            int count = 100;
+            int count = 300000;
             mainProgressBar.Value = 0;
             new Task(() =>
-            {                
-                for (int i = 0; i < count; i++)
+            {        
+                while (world.food.Count < count)
                 {
                     lock (world.tickLocker)
                         world.FoodTick(1000);
                     onUI(() => {
-                        mainProgressBar.Value = (double)i / count;
+                        mainProgressBar.Value = (double)world.food.Count / count;
                         Title = world.food.Values.Count.ToString();
-                        });
-                }
+                    });
+                }                
                 onUI(() => mainProgressBar.Value = 1);
             }).Start();            
         }
 
         private void onUI(Action act)
         {
-            Dispatcher.Invoke(act);
+            try
+            {
+                Dispatcher.Invoke(act);
+            }
+            catch(Exception e)
+            {
+
+            }
         }
 
         private delegate void NoArgDelegate();    

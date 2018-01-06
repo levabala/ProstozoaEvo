@@ -173,6 +173,7 @@ namespace PointsManager
             return new int[] { li, ri, ti, bi };
         }
 
+        object fillLocker = new object();
         private Cluster getCluster(double x, double y)
         {
             int idX = getClusterIdX(x);
@@ -184,8 +185,11 @@ namespace PointsManager
             bool needToFill = idX < 0 || idY < 0 || idX >= clusters.GetLength(0) || idY >= clusters.GetLength(1) || clusters.Length == 0;
             if (needToFill)
             {
-                fillClustersTo(idX, idY);
-                return getCluster(x, y);
+                lock (fillLocker)
+                {
+                    fillClustersTo(idX, idY);
+                    return getCluster(x, y);
+                }
             }
             return clusters[idX, idY];
         }

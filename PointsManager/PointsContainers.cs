@@ -21,6 +21,11 @@ namespace PointsManager
             { typeof(StaticPoint), new List<PointSet>() },
             { typeof(DinamicPoint), new List<PointSet>() },
         };
+        public Dictionary<Type, object> listLockers = new Dictionary<Type, object>()
+        {
+            { typeof(StaticPoint), new object() },
+            { typeof(DinamicPoint), new object() },
+        };
 
         public PointSetsContainer()
         {
@@ -30,6 +35,11 @@ namespace PointsManager
         public List<PointSet> Get<PointType>() where PointType : ManagedPoint
         {
             return pointSets[typeof(PointType)] as List<PointSet>;
+        }
+
+        public object GetLocker<PointType>() where PointType : ManagedPoint
+        {
+            return listLockers[typeof(PointType)];
         }
     }
 

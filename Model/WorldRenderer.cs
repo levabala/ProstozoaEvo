@@ -20,6 +20,7 @@ namespace Model
 
         Dictionary<Guid, uint> setsHashes = new Dictionary<Guid, uint>();
         Dictionary<Guid, ColoredGeometry> geometriesCache = new Dictionary<Guid, ColoredGeometry>();
+        Dictionary<ColoredGeometry, GeometryDrawing> drawingsCache = new Dictionary<ColoredGeometry, GeometryDrawing>();
 
         public double foodScale = 3;
         public double foodMaxDensity = Math.Pow(3, 3);
@@ -107,6 +108,8 @@ namespace Model
                 double foodGetTime = 0;
                 int foodGetCount = 0;
                 double createGeometryTime = 0;
+                int geometriesCreated = 0;
+                int geometriesRestored = 0;
                 //Parallel.For(0, coloredGeometry.Length - 1, (i) =>                
                 for (int i = 0; i < coloredGeometry.Length; i++)
                 {
@@ -121,8 +124,12 @@ namespace Model
                     {
                         bool exist = geometriesCache.TryGetValue(set.guid, out coloredGeometry[i]);
                         if (exist)
+                        {
+                            geometriesRestored++;
                             continue;
+                        }                        
                     }
+                    geometriesCreated++;
                     setsHashes[set.guid] = nowHash;
 
                     switch (set.type)
@@ -148,29 +155,23 @@ namespace Model
                             double ocean = 0;
                             double toxicity = 0;
                             foreach (StaticPoint p in set.points)
-                            {
-                                calcOtherOtherWatch.Restart();
+                            {                                
                                 Food f = world.food[p.id];
-                                foodGetTime += calcOtherOtherWatch.ElapsedMilliseconds;                                
-
                                 fire += f.fire;
                                 grass += f.grass;
                                 ocean += f.ocean;
                                 toxicity += f.toxicity;
-                            }
-                            foodGetCount += set.points.Count;
+                            }                            
                             toxicity /= set.points.Count;
                             //FoodDraw fd = new FoodDraw(set.x, set.y, alpha, size, fire, grass, ocean);
                             double sum = fire + grass + ocean;
-
-                            calcOtherOtherWatch.Restart();
+                            
                             Geometry g = new RectangleGeometry(
                                     new Rect(
                                         new Point(set.x - size / 2, set.y - size / 2),
                                         new Point(set.x + size / 2, set.y + size / 2))
                                 );
-                            g.Freeze();
-                            createGeometryTime += calcOtherOtherWatch.ElapsedMilliseconds;
+                            g.Freeze();                            
 
                             Color c = Color.FromArgb(
                                         (byte)(alpha * 255),//coeff * 255),
@@ -199,10 +200,6 @@ namespace Model
                     calcIterateClustersTimes.RemoveAt(0);
                 if (calcGeometryTimes.Count > checkTimes)
                     calcGeometryTimes.RemoveAt(0);                
-                if (foodGetTimes.Count > checkTimes)
-                    foodGetTimes.RemoveAt(0);
-                if (createGeometryTimes.Count > checkTimes)
-                    createGeometryTimes.RemoveAt(0);
 
                 int calcTime = 0;
                 foreach (double d in calcTimes)
@@ -224,24 +221,12 @@ namespace Model
                     calcGeometryTime += (int)d;
                 calcGeometryTime /= calcGeometryTimes.Count;
 
-                int foodGetTimeAvrg = 0;
-                foreach (double d in foodGetTimes)
-                    foodGetTimeAvrg += (int)d;
-                foodGetTimeAvrg /= foodGetTimes.Count;
-
-                int createGeometryTimeAvrg = 0;
-                foreach (double d in createGeometryTimes)
-                    createGeometryTimeAvrg += (int)d;
-                createGeometryTimeAvrg /= createGeometryTimes.Count;
-
                 int renderTime = 0;
 				lock (renderTimes)
 					foreach (double d in renderTimes)
 						renderTime += (int)d;
                 if (renderTimes.Count > 0)
                     renderTime /= renderTimes.Count;
-
-
 
                 try
                 {
@@ -250,14 +235,15 @@ namespace Model
                         if (window.Title != null)
                             window.Title = String.Format(
                                 "ClustersDrawed: {0}/{1}, Elements(Rendered/MaxRendered/InViewedClusters/Total): {2}/{3}/{4}/{5} " + 
-								"ElapsedTime: CalcSets {6}/CalcClusters {7}/CalcGeometry {8}/CalcAll {9}" + 
-                                "/Render {10}/Total {11}ms "+ 
-                                "| FoodGet: {12}ms CreateGeometry: {13}ms",
+								//"ElapsedTime: CalcSets/CalcClusters/CalcGeometry/CalcAll {6}/{7}/{8}/{9}ms" + 
+                                " Render {10}/Total {11}ms Geometries(Restored/Created): {12}/{13}" + 
+                                " CacheSize(CG/Drawings): {14}/{15}",
                                 clustersDrawed, world.pointsManager.clusters.Length,
                                 coloredGeometrySetLength, maxPartiesRendered, totalElements, world.pointsManager.pointsCount,
                                 calcGetSetsTime, calcIterateClustersTime, calcGeometryTime,
                                 calcTime, renderTime, calcTime + renderTime,
-                                foodGetTimeAvrg, createGeometryTimeAvrg);
+                                geometriesRestored, geometriesCreated,
+                                geometriesCache.Count, drawingsCache.Count);
                     });
                 }
                 catch (Exception e) { }
@@ -266,22 +252,28 @@ namespace Model
             }            
         }
         
-
         public void Render(DrawingContext drawingContext, ColoredGeometry[] coloredGeometry, Matrix m)
         {
 			//Window mainWindow = Application.Current.Windows[0];
 
             renderWatch.Restart();
             DrawingGroup group = new DrawingGroup();
-            group.Transform = new MatrixTransform(m);            
+            group.Transform = new MatrixTransform(m);
             foreach (ColoredGeometry cg in coloredGeometry)
                 if (cg.set == 1)
-                    group.Children.Add(
-                        new GeometryDrawing(
-                            (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
-                            (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1), 
-                            cg.g)
-                        );
+                {
+                    GeometryDrawing drawing;
+                    drawingsCache.TryGetValue(cg, out drawing);
+                    if (drawing == null)
+                    {
+                        drawing = new GeometryDrawing(
+                                (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
+                                (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1),
+                                cg.g);
+                        drawingsCache[cg] = drawing;
+                    }
+                    group.Children.Add(drawing);
+                }
             group.Freeze();
             drawingContext.DrawDrawing(group);
 

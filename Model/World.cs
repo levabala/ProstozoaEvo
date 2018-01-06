@@ -1,6 +1,7 @@
 ﻿using MathAssembly;
 using PointsManager;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,7 +23,7 @@ namespace Model
 
         Random rnd = new Random();
         public Dictionary<long, Protozoa> protozoas = new Dictionary<long, Protozoa>();
-        public Dictionary<long, Food> food = new Dictionary<long, Food>();        
+        public ConcurrentDictionary<long, Food> food = new ConcurrentDictionary<long, Food>();        
         public PointsManager.PointsManager pointsManager = new PointsManager.PointsManager(new Pnt(0, 0), 100);
         public Surface surface = new Surface();
 
@@ -158,7 +159,7 @@ namespace Model
         long ff = 0;        
         public void FoodTick(double time)
         {
-            double step = 10;
+            double step = 3;
             //foreach (SourcePoint spoint in surface.sourcePoints.Values)
             Parallel.ForEach(surface.sourcePoints.Values, (spoint) =>
             {
@@ -173,7 +174,7 @@ namespace Model
                 bool toSpawn = seed < rate;
                 while (dist < spoint.distance)
                 {
-                    if (seed < (1 / (Math.Sqrt(dist))) * strenght * time)
+                    if (seed < (1 / dist) * strenght * time)
                     {
                         double alpha = rnd.NextDouble() * Math.PI * 2;
                         Pnt foodPoint = Vector.GetEndPoint(spoint.location, alpha, dist);
@@ -185,7 +186,6 @@ namespace Model
                         addFood(f);
 
                         ff = 0;
-                        strenght /= 2;
                     }
                     else ff++;
 
@@ -210,10 +210,10 @@ namespace Model
             lock (foodAddLocker)
             {
                 f.id = counter;
-                food.Add(f.id, f);
-                pointsManager.addStaticPoint(f.point, f.id, FoodType);
                 counter++;
             }
+            food[f.id] = f;
+            pointsManager.addStaticPoint(f.point, f.id, FoodType);            
         }
 
         public void addZoa(int distance)

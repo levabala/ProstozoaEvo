@@ -20,6 +20,7 @@ namespace PointsManager
         public void addPoint<PointType>(PointType point) where PointType : ManagedPoint
         {
             List<PointSet> sets = container.Get<PointType>();
+            object locker = container.GetLocker<PointType>();
 
             pointsCount++;
             double minDx, minDy, minDist;
@@ -47,13 +48,15 @@ namespace PointsManager
                 return;
             }
             PointSet newSet = new PointSet(point, joinDist);
-            sets.Add(newSet);
+            lock(locker)
+                sets.Add(newSet);
             setsCount++;            
         }
 
         public void addSet<PointType>(PointSet inSet) where PointType : ManagedPoint
         {
             List<PointSet> sets = container.Get<PointType>();
+            object locker = container.GetLocker<PointType>();
 
             pointsCount++;            
             foreach (PointSet set in sets)
@@ -69,7 +72,8 @@ namespace PointsManager
                     return;
                 }
             }
-            sets.Add(inSet);
+            lock(sets)
+                sets.Add(inSet);
             setsCount++;
         }
 
