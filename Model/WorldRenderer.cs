@@ -86,19 +86,10 @@ namespace Model
                 int clustersDrawed = 0;
                 int totalElements = 0;
                 foreach (Cluster c in world.pointsManager.clusters)                
-                    if (c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
+                    if (c != null && c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
                     {
                         clustersDrawed++;
-                        totalElements += c.container.Values.Count;
-                        /*Geometry g = new RectangleGeometry(
-                                    new Rect(
-                                        new Point(c.x, c.y),
-                                        new Point(c.x + c.size, c.y + c.size))
-                                );
-                        g.Freeze();
-                        Color color = Colors.DarkGreen;
-                        ColoredGeometry cg = new ColoredGeometry(g, null, color);
-                        coloredGeometry.Add(cg);*/
+                        totalElements += c.container.Values.Count;                        
                     }
                 calcIterateClustersTimes.Add(calcOtherWatch.ElapsedMilliseconds);
 
@@ -281,6 +272,23 @@ namespace Model
                 group.Children.Add(drawing);
             }
             //group.Freeze();
+
+
+            foreach (Cluster c in world.pointsManager.clusters)
+                if (c != null && c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
+                {
+                    Geometry g = new RectangleGeometry(
+                                new Rect(
+                                    new Point(c.x, c.y),
+                                    new Point(c.x + c.size, c.y + c.size))
+                            );
+                    g.Freeze();
+                    Color color = Colors.DarkGreen;
+                    group.Children.Add(
+                        new GeometryDrawing(null, new Pen(new SolidColorBrush(color), c.idZ * 10 + 1), g)
+                        );
+                }
+
             drawingContext.DrawDrawing(group);
 
             lock (renderTimes)

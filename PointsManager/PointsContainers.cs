@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,23 +10,25 @@ namespace BillionPointsManager
 {
     public class PointSetsContainer
     {
-        public Dictionary<Type, IList>.ValueCollection Values
+        public ICollection<IList> Values
         {
             get
             {
                 return pointSets.Values;
             }
         }
-        public Dictionary<Type, IList> pointSets = new Dictionary<Type, IList>()
+        public ConcurrentDictionary<Type, IList> pointSets = 
+            new ConcurrentDictionary<Type, IList>(new List<KeyValuePair<Type, IList>>()
         {
-            { typeof(StaticPoint), new List<PointSet>() },
-            { typeof(DinamicPoint), new List<PointSet>() },
-        };
-        public Dictionary<Type, object> listLockers = new Dictionary<Type, object>()
+            new KeyValuePair<Type, IList>(typeof(StaticPoint), new List<PointSet>()),
+            new KeyValuePair<Type, IList>(typeof(DinamicPoint), new List<PointSet>())
+        });       
+        public ConcurrentDictionary<Type, object> listLockers =
+            new ConcurrentDictionary<Type, object>(new List<KeyValuePair<Type, object>>()
         {
-            { typeof(StaticPoint), new object() },
-            { typeof(DinamicPoint), new object() },
-        };
+            new KeyValuePair<Type, object>(typeof(StaticPoint), new object()),
+            new KeyValuePair<Type, object>(typeof(DinamicPoint), new object())
+        });        
 
         public PointSetsContainer()
         {
@@ -45,18 +48,20 @@ namespace BillionPointsManager
 
     public class PointContainer
     {
-        public Dictionary<Type, IList>.ValueCollection Values
+        public ICollection<IList> Values
         {
             get
             {
                 return pointSets.Values;
             }
         }
-        public Dictionary<Type, IList> pointSets = new Dictionary<Type, IList>()
+
+        public ConcurrentDictionary<Type, IList> pointSets =
+            new ConcurrentDictionary<Type, IList>(new List<KeyValuePair<Type, IList>>()
         {
-            { typeof(StaticPoint), new List<StaticPoint>() },
-            { typeof(DinamicPoint), new List<DinamicPoint>() },
-        };
+            new KeyValuePair<Type, IList>(typeof(StaticPoint), new List<StaticPoint>()),
+            new KeyValuePair<Type, IList>(typeof(DinamicPoint), new List<DinamicPoint>())
+        });
 
         public PointContainer()
         {
@@ -70,28 +75,30 @@ namespace BillionPointsManager
     }
     public class DictionaryOfPointContainer
     {
-        public Dictionary<Type, IDictionary>.ValueCollection Values
+        public ICollection<IDictionary> Values
         {
             get
             {
                 return dictionaries.Values;
             }
         }
-        Dictionary<Type, IDictionary> dictionaries = new Dictionary<Type, IDictionary>()
-        {
-            { typeof(StaticPoint), new Dictionary<long, StaticPoint>() },
-            { typeof(DinamicPoint), new Dictionary<long, DinamicPoint>() },
-        };
+        ConcurrentDictionary<Type, IDictionary> dictionaries = new ConcurrentDictionary<Type, IDictionary>();        
 
         public DictionaryOfPointContainer()
         {
-
+            dictionaries.TryAdd(typeof(StaticPoint), new ConcurrentDictionary<long, StaticPoint>());
+            dictionaries.TryAdd(typeof(DinamicPoint), new ConcurrentDictionary<long, DinamicPoint>());            
         }
 
-        public Dictionary<long, PointType> Get<PointType>() where PointType : ManagedPoint
+        public ConcurrentDictionary<long, PointType> Get<PointType>() where PointType : ManagedPoint
         {
-            return dictionaries[typeof(PointType)] as Dictionary<long, PointType>;
+            return dictionaries[typeof(PointType)] as ConcurrentDictionary<long, PointType>;
         }
     }
 
+    public interface ICountable
+    {
+        ICollection Values { get; }
+        int Count { get; }
+    }
 }

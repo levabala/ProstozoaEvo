@@ -32,6 +32,8 @@ namespace BillionPointsManager
             bpy = y + interactRadius;
         }
 
+        public abstract void addCluster(Cluster c);
+
         public abstract void setClusters(Cluster[] clusters); 
         
         public void linkObject(Object key, Object obj)

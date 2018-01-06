@@ -21,5 +21,13 @@ namespace BillionPointsManager
             foreach (Cluster c in clusters)
                 c.addPoint(this);
         }
+
+        public override void addCluster(Cluster c) {
+            Cluster[] newClusters = new Cluster[clusters.Length + 1];
+            clusters.CopyTo(newClusters, 0);
+            newClusters[newClusters.Length - 1] = c;
+            clusters = newClusters;
+            c.addPoint(this);
+        }
     }
 }
