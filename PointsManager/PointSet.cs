@@ -1,14 +1,16 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using xxHashSharp;
 
-namespace PointsManager
+namespace BillionPointsManager
 {
     public class PointSet
     {
+        public Hashtable linkedObjects = new Hashtable();
         public uint hash = 0; //(changes count)
         public Guid guid = Guid.NewGuid();
         public double x, y;
@@ -57,16 +59,9 @@ namespace PointsManager
             }
         }
 
-        private byte[] Combine(params byte[][] arrays)
+        public void linkObject(Object key, Object obj)
         {
-            byte[] rv = new byte[arrays.Sum(a => a.Length)];
-            int offset = 0;
-            foreach (byte[] array in arrays)
-            {
-                System.Buffer.BlockCopy(array, 0, rv, offset, array.Length);
-                offset += array.Length;
-            }
-            return rv;
+            linkedObjects.Add(key, obj);
         }
     }
 }

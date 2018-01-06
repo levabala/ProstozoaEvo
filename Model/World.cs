@@ -1,5 +1,5 @@
-﻿using MathAssembly;
-using PointsManager;
+﻿using BillionPointsManager;
+using MathAssembly;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -24,7 +24,7 @@ namespace Model
         Random rnd = new Random();
         public Dictionary<long, Protozoa> protozoas = new Dictionary<long, Protozoa>();
         public ConcurrentDictionary<long, Food> food = new ConcurrentDictionary<long, Food>();        
-        public PointsManager.PointsManager pointsManager = new PointsManager.PointsManager(new Pnt(0, 0), 100);
+        public PointsManager pointsManager = new PointsManager(new Pnt(0, 0), 100);
         public Surface surface = new Surface();
 
         public World()
@@ -200,7 +200,9 @@ namespace Model
         {
             zoa.id = counter;
             protozoas.Add(zoa.id, zoa);
-            pointsManager.addDinamicPoint(zoa.centerP, zoa.viewDepth * zoa.radius, zoa.id, ZoaType);
+            pointsManager.addDinamicPoint(
+                zoa.centerP, zoa.viewDepth * zoa.radius, zoa.id, ZoaType, new KeyValuePair<object, object>(WorldObjectType, zoa)
+                );
             counter++;
         }
 
@@ -213,7 +215,9 @@ namespace Model
                 counter++;
             }
             food[f.id] = f;
-            pointsManager.addStaticPoint(f.point, f.id, FoodType);            
+            pointsManager.addStaticPoint(
+                f.point, f.id, FoodType, new KeyValuePair<object, object>(WorldObjectType, f)
+                );            
         }
 
         public void addZoa(int distance)
@@ -232,5 +236,6 @@ namespace Model
         public const int ZoaType = 0;
         public const int FoodType = 1;
         public const int SourcePointType = 2;
+        public const int WorldObjectType = 3;
     }
 }

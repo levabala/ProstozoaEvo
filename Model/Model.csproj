@@ -66,9 +66,9 @@
       <Project>{5837944e-5319-4d0b-86d5-1d0abea705e3}</Project>
       <Name>MathAssembly</Name>
     </ProjectReference>
-    <ProjectReference Include="..\PointsManager\PointsManager.csproj">
+    <ProjectReference Include="..\PointsManager\BillionPointsManager.csproj">
       <Project>{269f815b-7dca-4bce-a6bf-55d9f3d97a09}</Project>
-      <Name>PointsManager</Name>
+      <Name>BillionPointsManager</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointsManager
+namespace BillionPointsManager
 {
     public class PointsManager
     {
@@ -32,23 +32,27 @@ namespace PointsManager
             clustersLeft = clustersRight = clustersTop = clustersBottom = 0;
         }
 
-        public void addDinamicPoint(Pnt point, double interactRadius, long id, int type)
+        public void addDinamicPoint(Pnt point, double interactRadius, long id, int type, params KeyValuePair<Object, Object>[] linkedObjects)
         {
-            DinamicPoint p = new DinamicPoint(point.x, point.y, interactRadius, id, type);            
+            DinamicPoint p = new DinamicPoint(point.x, point.y, interactRadius, id, type);
+            foreach (KeyValuePair<Object, Object> pair in linkedObjects)
+                p.linkObject(pair.Key, pair.Value);
             updatePoint(p);
             pointsContainer.Get<DinamicPoint>()[id] = p;
             pointsCount++;
         }
 
-        public void addStaticPoint(Pnt point, long id, int type)
+        public void addStaticPoint(Pnt point, long id, int type, params KeyValuePair<Object, Object>[] linkedObjects)
         {
             StaticPoint p = new StaticPoint(point.x, point.y, 0, id, type);
+            foreach (KeyValuePair<Object, Object> pair in linkedObjects)
+                p.linkObject(pair.Key, pair.Value);
             p.setClusters(getClusters(p));
             pointsContainer.Get<StaticPoint>()[id] = p;
             pointsCount++;
         }
 
-        public long[] getNeighbors<PointType>(long id) where PointType : ManagedPoint
+        public long[] getNeighborsIds<PointType>(long id) where PointType : ManagedPoint
         {
             PointType point = null;
             if (!pointsContainer.Get<PointType>().TryGetValue(id, out point))
@@ -62,13 +66,13 @@ namespace PointsManager
             return nearPoints.ToArray();            
         }
 
-        public StaticPoint[] getPoints(double lx, double rx, double ty, double by)
+        public ManagedPoint[] getPoints(double lx, double rx, double ty, double by)
         {
             int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
             return getPointsByIdBorders(ids[0], ids[1], ids[2], ids[3]);
         }        
 
-        public StaticPoint[] getPointsByIdBorders(int li, int ri, int ti, int bi)
+        public ManagedPoint[] getPointsByIdBorders(int li, int ri, int ti, int bi)
         {            
             List<StaticPoint> output = new List<StaticPoint>();
             if (ri > clusters.GetLength(0) - 1)

@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFRendererModel2", "WPFRen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathAssembly", "MathAssembly\MathAssembly.csproj", "{5837944E-5319-4D0B-86D5-1D0ABEA705E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PointsManager", "PointsManager\PointsManager.csproj", "{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BillionPointsManager", "PointsManager\BillionPointsManager.csproj", "{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionalAssembly", "FunctionalAssembly\FunctionalAssembly.csproj", "{48892C1D-29E7-4D13-91E5-DCE3A4E05CE7}"
 EndProject

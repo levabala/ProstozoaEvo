@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointsManager
+namespace BillionPointsManager
 {
     public class StaticPoint : ManagedPoint
     {        
