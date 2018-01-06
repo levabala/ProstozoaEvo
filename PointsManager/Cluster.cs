@@ -45,14 +45,17 @@ namespace BillionPointsManager
             }
         }
 
-        /*
-        public int getLayerId(int maxPointsCount)
+        
+        public int getLayerId<PointType>(int maxCount) where PointType : ManagedPoint
         {
             for (int i = 0; i < layers.Length; i++)
-                if (layers[i].dinamicSets.Count + layers[i].staticSets.Count <= maxPointsCount)
+            {
+                IList sets = layers[i].container.Get<PointType>();
+                if (sets.Count <= maxCount)
                     return i;
+            }
             return layers.Length - 1;
-        }*/
+        }
 
         //TODO
         public void removePoint(long id)
@@ -71,14 +74,14 @@ namespace BillionPointsManager
             return layers.Last().container.Get<PointType>().ToArray();
         }
 
-        public StaticPoint[] getAllPointsAsArray()
+        public ManagedPoint[] getAllPointsAsArray()
         {
             int size = 0;
-            foreach (List<StaticPoint> list in container.Values)
+            foreach (List<ManagedPoint> list in container.Values)
                 size += list.Count;
-            StaticPoint[] pnts = new StaticPoint[size];
+            ManagedPoint[] pnts = new ManagedPoint[size];
             int index = 0;
-            foreach (List<StaticPoint> list in container.Values)
+            foreach (List<ManagedPoint> list in container.Values)
             {
                 list.CopyTo(pnts, index);
                 index += list.Count;

@@ -28,7 +28,9 @@ namespace BillionPointsManager
             minDist = minDx = minDy = joinDist;
             for (int i = 0; i < sets.Count; i++)
             {
-                PointSet set = sets[i];
+                PointSet set;
+                lock (locker)
+                    set = sets[i];
                 if (set.type != point.type)
                     continue;
                 double dx = point.x - set.x;

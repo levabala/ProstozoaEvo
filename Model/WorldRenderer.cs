@@ -70,7 +70,7 @@ namespace Model
         List<double> renderTimes = new List<double>();
 
         
-        public ColoredGeometry[] GetGeometries(Point leftTopView, Point rightBottomView, Window window)//, Matrix m)
+        public PointSet[] GetSetsToDraw(Point leftTopView, Point rightBottomView, Window window)//, Matrix m)
         {						            
             lock (world.tickLocker)
             {
@@ -102,8 +102,7 @@ namespace Model
                     }
                 calcIterateClustersTimes.Add(calcOtherWatch.ElapsedMilliseconds);
 
-                calcOtherWatch.Restart();
-                ColoredGeometry[] coloredGeometry = new ColoredGeometry[setsToDraw.Length];
+                calcOtherWatch.Restart();                
                 int coloredGeometrySetLength = 0;
                 double foodGetTime = 0;
                 int foodGetCount = 0;
@@ -111,40 +110,34 @@ namespace Model
                 int geometriesCreated = 0;
                 int geometriesRestored = 0;
                 //Parallel.For(0, coloredGeometry.Length - 1, (i) =>                
-                for (int i = 0; i < coloredGeometry.Length; i++)
+                for (int i = 0; i < setsToDraw.Length; i++)
                 {
                     PointSet set = setsToDraw[i];                    
                     ColoredGeometry cg = new ColoredGeometry();
 
-                    Object val = set.linkedObjects[CacheLastHashType];
+                    Object val = set.linkedObjects[CacheLastHashGeometryType];
                     uint oldHash = 0;
                     if (val != null)
                         oldHash = (uint)val;
                     uint nowHash = set.hash;
                     if (oldHash == nowHash)
                     {
-                        Object val2 = set.linkedObjects[CacheColoredGeometryType];
-                        ColoredGeometry cachedGeometry = new ColoredGeometry();
+                        Object val2 = set.linkedObjects[CacheColoredGeometryType];                        
                         if (val2 != null)
-                            cachedGeometry = (ColoredGeometry)set.linkedObjects[CacheColoredGeometryType];
-                        if (cachedGeometry.set == 1)
                         {
-                            coloredGeometry[i] = cachedGeometry;
                             geometriesRestored++;
                             continue;
-                        }                        
+                        }                                                 
                     }
                     geometriesCreated++;
-                    set.linkedObjects[CacheLastHashType] = nowHash;
+                    set.linkedObjects[CacheLastHashGeometryType] = nowHash;
 
                     switch (set.type)
                     {
                         case World.ZoaType:
                             break;
                         case World.FoodType:                            
-                            double size = (set.joinDist) / 2;
-                            /*if (size < foodScale)
-                                size = foodScale;*/
+                            double size = (set.joinDist) / 2;                            
                             double alpha =
                                 (foodScale * foodScale * set.points.Count) / //total food area 
                                 (Math.PI * (set.joinDist / 2) * (set.joinDist / 2));
@@ -182,8 +175,7 @@ namespace Model
                                         (byte)(fire / sum * 255),
                                         (byte)(grass / sum * 255),
                                         (byte)(ocean / sum * 255));
-                            cg = new ColoredGeometry(g, c, null);
-                            coloredGeometry[i] = cg;
+                            cg = new ColoredGeometry(g, c, null);                            
                             break;
                     }
                     set.linkedObjects[CacheColoredGeometryType] = cg;
@@ -252,32 +244,43 @@ namespace Model
                 }
                 catch (Exception e) { }
 
-				return coloredGeometry;
+				return setsToDraw;
             }            
         }
         
-        public void Render(DrawingContext drawingContext, ColoredGeometry[] coloredGeometry, Matrix m)
-        {
-			//Window mainWindow = Application.Current.Windows[0];
-
+        public void Render(DrawingContext drawingContext, PointSet[] setsToDraw, Matrix m)
+        {			
             renderWatch.Restart();
             DrawingGroup group = new DrawingGroup();
             group.Transform = new MatrixTransform(m);
-            foreach (ColoredGeometry cg in coloredGeometry)
-                if (cg.set == 1)
+            foreach (PointSet set in setsToDraw)
+            {
+                Object drawingObj = set.linkedObjects[CacheDrawingsType];
+                GeometryDrawing drawing;
+
+                Object val = set.linkedObjects[CacheLastHashDrawingType];
+                uint oldHash = 0;
+                if (val != null)
+                    oldHash = (uint)val;
+                uint nowHash = set.hash;
+
+                if (drawingObj != null && oldHash == nowHash)
+                    drawing = drawingObj as GeometryDrawing;
+                else
                 {
-                    GeometryDrawing drawing;                    
-                    //if (drawing == null)
-                    //{
-                        drawing = new GeometryDrawing(
-                                (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
-                                (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1),
-                                cg.g);
-                    //    drawingsCache[cg] = drawing;
-                    //}
-                    group.Children.Add(drawing);
+                    ColoredGeometry cg = (ColoredGeometry)set.linkedObjects[CacheColoredGeometryType];
+                    drawing = new GeometryDrawing(
+                            (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
+                            (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1),
+                            cg.g);
+                    set.linkedObjects[CacheDrawingsType] = drawing;
                 }
-            group.Freeze();
+                set.linkedObjects[CacheLastHashDrawingType] = nowHash;
+
+                drawing.Freeze();                
+                group.Children.Add(drawing);
+            }
+            //group.Freeze();
             drawingContext.DrawDrawing(group);
 
             lock (renderTimes)
@@ -289,8 +292,9 @@ namespace Model
         }
 
         public const int CacheColoredGeometryType = 10;
-        public const int CacheLastHashType = 11;
-        public const int CacheDrawingsType = 12;
+        public const int CacheLastHashGeometryType = 11;
+        public const int CacheLastHashDrawingType = 12;
+        public const int CacheDrawingsType = 13;
 
         /*Stopwatch renderWatch = new Stopwatch();
         public void Render(DrawingContext drawingContext, Matrix matrix, Drawing[] drawings)

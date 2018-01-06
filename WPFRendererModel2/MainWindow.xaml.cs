@@ -62,7 +62,7 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Fertility, 100);
             }
 
-            int count = 300000;
+            int count = 1000000; //one million points!
             mainProgressBar.Value = 0;
             new Task(() =>
             {        

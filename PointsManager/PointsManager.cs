@@ -92,18 +92,55 @@ namespace BillionPointsManager
         }
 
         public PointSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
-        {
-            List<PointSet> output = new List<PointSet>();
+        {            
             if (ri > clusters.GetLength(0) - 1)
                 ri = clusters.GetLength(0) - 1;
             if (bi > clusters.GetLength(1) - 1)
-                bi = clusters.GetLength(1) - 1;
-            int totalClusters = (ri - li + 1) * (bi - ti + 1);
-            int clustersLeft = totalClusters;
-            int minLayerId = 0;
-            int pointsCount = Int32.MaxValue;            
+                bi = clusters.GetLength(1) - 1;                      
 
-            while(pointsCount > maxPointsCount && minLayerId < layersCount)
+            //return OneByOneGetterNotSync(li, ri, ti, bi, maxPointsCount);
+            return MinLayerOneLoopGetter(li, ri, ti, bi, maxPointsCount);
+        }        
+
+        private PointSet[] OneByOneGetterNotSync(int li, int ri, int ti, int bi, int maxPointsCount)
+        {
+            int clustersLeft = (ri - li + 1) * (bi - ti + 1);
+            List<PointSet> output = new List<PointSet>();
+            int pointsLeft = maxPointsCount;
+            for (int idX = li; idX <= ri; idX++)
+                for (int idY = ti; idY <= bi; idY++)
+                {
+                    output.AddRange(clusters[idX, idY].getPointSets<StaticPoint>(pointsLeft / clustersLeft));
+                    clustersLeft--;
+                    pointsLeft = maxPointsCount - output.Count;
+                }
+            return output.ToArray();
+        }
+        
+        private PointSet[] MinLayerOneLoopGetter(int li, int ri, int ti, int bi, int maxPointsCount)
+        {
+            int clustersLeft = (ri - li + 1) * (bi - ti + 1);
+            int minLayerId = 0;
+            for (int idX = li; idX <= ri; idX++)
+                for (int idY = ti; idY <= bi; idY++)
+                {
+                    int pointsPerCluster = (maxPointsCount) / clustersLeft;
+                    if (pointsPerCluster < 1)
+                        pointsPerCluster = 1;
+                    int got = clusters[idX, idY].getLayerId<StaticPoint>(pointsPerCluster);
+                    int last = minLayerId;
+                    minLayerId = Math.Max(minLayerId, got);
+                    maxPointsCount -= clusters[idX, idY].layers[minLayerId].setsCount;
+                    clustersLeft--;
+                }
+            return getAllAtLayer(li, ri, ti, bi, minLayerId);
+        }
+
+        private PointSet[] MinLayerGetter(int li, int ri, int ti, int bi, int maxPointsCount)
+        {            
+            int minLayerId = 0;
+            int pointsCount = Int32.MaxValue;
+            while (pointsCount > maxPointsCount && minLayerId < layersCount)
             {
                 pointsCount = 0;
                 for (int idX = li; idX <= ri; idX++)
@@ -111,49 +148,28 @@ namespace BillionPointsManager
                     {
                         pointsCount += clusters[idX, idY].layers[minLayerId].setsCount;
                         if (pointsCount > maxPointsCount)
-                        {                            
+                        {
                             //init exit
-                            idX = ri + 1;                            
+                            idX = ri + 1;
                             minLayerId++;
                             break;
-                        }                            
+                        }
                     }
             }
             if (minLayerId >= layersCount)
                 minLayerId = layersCount - 1;
-
-            //one-loop method
-            /*for (int idX = li; idX <= ri; idX++)
-                for (int idY = ti; idY <= bi; idY++)
-                {
-                    int pointsPerCluster = (maxPointsCount) / clustersLeft;
-                    if (pointsPerCluster < 1)
-                        pointsPerCluster = 1;
-                    minLayerId = Math.Max(minLayerId, clusters[idX, idY].getLayerId(pointsPerCluster));
-                    maxPointsCount -= clusters[idX, idY].layers[minLayerId].sets.Count;
-                    clustersLeft--;
-                }*/
-
-            for (int idX = li; idX <= ri; idX++)
-                for (int idY = ti; idY <= bi; idY++)                                    
-                    output.AddRange(clusters[idX, idY].layers[minLayerId].getAllSets());
             this.minLayerId = minLayerId;
+
+            return getAllAtLayer(li, ri, ti, bi, minLayerId);
+        }
+
+        private PointSet[] getAllAtLayer(int li, int ri, int ti, int bi, int layerId)
+        {
+            List<PointSet> output = new List<PointSet>();
+            for (int idX = li; idX <= ri; idX++)
+                for (int idY = ti; idY <= bi; idY++)
+                    output.AddRange(clusters[idX, idY].layers[layerId].getAllSets());            
             return output.ToArray();
-
-            /*
-             * int pointsPerCluster = maxPointsCount;
-                    for (int idX2 = li; idX2 < idX; idX2++)
-                        for (int idY2 = ti; idY2 <= bi; idY2++)
-                            pointsPerCluster -= clusters[idX2, idY2].layers[minLayerId].sets.Count;                    
-                    for (int idY2 = ti; idY2 <= idY; idY2++)
-                        pointsPerCluster -= clusters[idX, idY2].layers[minLayerId].sets.Count;
-                    pointsPerCluster /= clustersLeft;
-
-                    if (pointsPerCluster < 1)
-                        pointsPerCluster = 1;
-                    minLayerId = Math.Max(minLayerId, clusters[idX, idY].getLayerId(pointsPerCluster));
-                    clustersLeft--;
-             */
         }
 
         private int[] getClustersIdsByEdges(double lx, double rx, double ty, double by)
