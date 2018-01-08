@@ -24,7 +24,7 @@ namespace BillionPointsManager
             this.idZ = idZ;
             this.size = size;
             layers = new Layer[layersCount];
-            double joinStep = size / layersCount;            
+            double joinStep = size / (layersCount);            
             for (int i = 0; i < layers.Length; i++)
                 layers[i] = new Layer(i, joinStep * (i + 1));
         }

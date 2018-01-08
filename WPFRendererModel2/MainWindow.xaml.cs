@@ -52,7 +52,7 @@ namespace WPFRendererModel2
             worldElement.setWorldRenderer(worldRenderer);
             mainCanvas.Children.Add(worldElement);
 
-            for (int i = 0; i < 60; i++)
+            for (int i = 0; i < 1; i++)
             {
                 worldController.addSource(SourceType.Fire, 700);
                 worldController.addSource(SourceType.Fertility, 100);
@@ -62,17 +62,16 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Fertility, 100);
             }
 
-            int count = 200000; //one million points!(no)
+            int count = 2000; //one million points! (no)
             mainProgressBar.Value = 0;
             new Task(() =>
             {        
                 while (world.food.Count < count)
                 {
                     lock (world.tickLocker)
-                        world.FoodTick(1000);
+                        world.FoodTick(100);
                     onUI(() => {
-                        mainProgressBar.Value = (double)world.food.Count / count;
-                        Title = world.food.Values.Count.ToString();
+                        mainProgressBar.Value = (double)world.food.Count / count;                        
                     });
                 }                
                 onUI(() => mainProgressBar.Value = 1);

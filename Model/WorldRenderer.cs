@@ -128,15 +128,12 @@ namespace Model
                         case World.ZoaType:
                             break;
                         case World.FoodType:                            
-                            double size = (set.joinDist) / 2;                            
+                            double size = (set.joinDist * 2);
                             double alpha =
-                                (foodScale * foodScale * set.points.Count) / //total food area 
-                                (Math.PI * (set.joinDist / 2) * (set.joinDist / 2));
+                                (world.pointsManager.lowestPointSize * world.pointsManager.lowestPointSize * set.points.Count * 4) / //total food area 
+                                (Math.PI * size * size / 4);
                             if (alpha > 1)
-                                alpha = 1;
-                            if (alpha < 0.01)
-                                break;
-                                //return;
+                                alpha = 1;                            
                             coloredGeometrySetLength++;
 
                             double fire = 0;
@@ -151,13 +148,16 @@ namespace Model
                                 ocean += f.ocean;
                                 toxicity += f.toxicity;
                             }                            
-                            toxicity /= set.points.Count;     
-                                                        
-                            Geometry g = new RectangleGeometry(
+                            toxicity /= set.points.Count;
+
+                            /*Geometry g = new RectangleGeometry(
                                     new Rect(
                                         new Point(set.x - size / 2, set.y - size / 2),
                                         new Point(set.x + size / 2, set.y + size / 2))
-                                );
+                                );*/
+                            Geometry g = new EllipseGeometry(
+                                new Rect(set.x - size / 2, set.y - size / 2, size, size)                                    
+                            );
                             g.Freeze();
 
                             double sum = fire + grass + ocean;
@@ -227,7 +227,7 @@ namespace Model
                                 " Render {10}/Total {11}ms Geometries(Restored/Created): {12}/{13}",
                                 //" CacheSize(CG/Drawings): {14}/{15}",
                                 clustersDrawed, world.pointsManager.clusters.Length,
-                                coloredGeometrySetLength, maxPartiesRendered, totalElements, world.pointsManager.pointsCount,
+                                setsToDraw.Length, maxPartiesRendered, totalElements, world.pointsManager.pointsCount,
                                 calcGetSetsTime, calcIterateClustersTime, calcGeometryTime,
                                 calcTime, renderTime, calcTime + renderTime,
                                 geometriesRestored, geometriesCreated,
@@ -248,7 +248,11 @@ namespace Model
             DrawingGroup group = new DrawingGroup();
             group.Transform = new MatrixTransform(m);
 
-            group.Children.Add(new GeometryDrawing(Brushes.Black, null, new EllipseGeometry(new Point(0, 0), 7, 7)));
+            group.Children.Add(
+                new GeometryDrawing(
+                    Brushes.Black, null, new EllipseGeometry(new Point(0, 0), 20, 20)
+                    )
+                    );
 
             foreach (PointSet set in setsToDraw)
             {
@@ -269,20 +273,20 @@ namespace Model
                     drawing = new GeometryDrawing(
                             (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
                             (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1),
-                            cg.g);
+                            cg.g);                    
                     set.linkedObjects[CacheDrawingsType] = drawing;
                 }
                 set.linkedObjects[CacheLastHashDrawingType] = nowHash;
 
                 drawing.Freeze();                
-                group.Children.Add(drawing);
+                group.Children.Add(drawing);                
             }
             //group.Freeze();
 
 
-            /*foreach (Cluster c in world.pointsManager.clusters)
+            foreach (Cluster c in world.pointsManager.clusters)
             {
-                if (c != null && c.idZ > 0)// && c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
+                if (c != null && c.idZ >= 0)// && c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
                 {
                     Geometry g = new RectangleGeometry(
                                 new Rect(
@@ -295,7 +299,7 @@ namespace Model
                         new GeometryDrawing(null, new Pen(new SolidColorBrush(color), c.idZ * 3 + 1), g)
                         );
                 }
-            }*/
+            }
 
             drawingContext.DrawDrawing(group);
 

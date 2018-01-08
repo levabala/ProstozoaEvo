@@ -13,7 +13,7 @@ namespace BillionPointsManager
         public Hashtable linkedObjects = new Hashtable();
         public uint hash = 0; //(changes count)
         public Guid guid = Guid.NewGuid();
-        public double x, y;
+        public double x, y, originX, originY;
         public int type;
         public double joinDist;
         public List<ManagedPoint> points = new List<ManagedPoint>();
@@ -22,8 +22,8 @@ namespace BillionPointsManager
         public PointSet(ManagedPoint point, double joinDist) 
         {                                 
             this.joinDist = joinDist;
-            x = point.x;
-            y = point.y;
+            originX = x = point.x;
+            originY = y = point.y;
             type = point.type;
             hash = 0;
             points.Add(point);            
@@ -43,7 +43,7 @@ namespace BillionPointsManager
             y += coeff * dy;
             lock (locker)
             {
-                points.AddRange(set.points);
+                points.AddRange(set.points);                
                 hash++;
             }
         }

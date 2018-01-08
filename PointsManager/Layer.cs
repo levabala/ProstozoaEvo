@@ -41,7 +41,8 @@ namespace BillionPointsManager
                     minId = i;
                     minDist = dist;
                     minDx = dx;
-                    minDy = dy;                    
+                    minDy = dy;
+                    break;
                 }
             }
             if (minId != -1)
