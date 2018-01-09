@@ -23,15 +23,16 @@ namespace BillionPointsManager
             object locker = container.GetLocker<PointType>();
 
             pointsCount++;
+            int pointType = point.type;
             double minDx, minDy, minDist;
             int minId = -1;
             minDist = minDx = minDy = joinDist;
             for (int i = 0; i < sets.Count; i++)
             {
                 PointSet set;
-                lock (locker)
+                //lock (locker)
                     set = sets[i];
-                if (set.type != point.type)
+                if (set.type != pointType)
                     continue;
                 double dx = point.x - set.x;
                 double dy = point.y - set.y;

@@ -46,13 +46,20 @@ namespace WPFRendererModel2
                     case Key.OemMinus:
                         worldRenderer.maxPartiesRendered = (int)(worldRenderer.maxPartiesRendered / 1.5);
                         break;
+                    case Key.O:
+                        world.pointsManager.fixedLayerId++;
+                        break;
+                    case Key.L:
+                        if (world.pointsManager.fixedLayerId >= 0)
+                            world.pointsManager.fixedLayerId--;
+                        break;
                 }
             };
 
             worldElement.setWorldRenderer(worldRenderer);
             mainCanvas.Children.Add(worldElement);
 
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 20; i++)
             {
                 worldController.addSource(SourceType.Fire, 700);
                 worldController.addSource(SourceType.Fertility, 100);
@@ -62,7 +69,7 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Fertility, 100);
             }
 
-            int count = 2000; //one million points! (no)
+            int count = 50000; //one million points! (no)
             mainProgressBar.Value = 0;
             new Task(() =>
             {        

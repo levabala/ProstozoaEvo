@@ -224,7 +224,7 @@ namespace Model
                                 "Clusters: {14}x{15}x{16} isGeneratingLayer: {17}|{18}%" + 
                                 " ClustersDrawed: {0}/{1}, Elements(Rendered/MaxRendered/InViewedClusters/Total): {2}/{3}/{4}/{5} " +
                                 //"ElapsedTime: CalcSets/CalcClusters/CalcGeometry/CalcAll {6}/{7}/{8}/{9}ms" + 
-                                " Render {10}/Total {11}ms Geometries(Restored/Created): {12}/{13}",
+                                " Render {10}/Total {11}ms Geometries(Restored/Created): {12}/{13} FixedLayer: {19}",
                                 //" CacheSize(CG/Drawings): {14}/{15}",
                                 clustersDrawed, world.pointsManager.clusters.Length,
                                 setsToDraw.Length, maxPartiesRendered, totalElements, world.pointsManager.pointsCount,
@@ -232,7 +232,8 @@ namespace Model
                                 calcTime, renderTime, calcTime + renderTime,
                                 geometriesRestored, geometriesCreated,
                                 world.pointsManager.clusters.GetLength(0), world.pointsManager.clusters.GetLength(1), world.pointsManager.clusters.GetLength(2),
-                                world.pointsManager.isGeneratingLayer, (int)(world.pointsManager.layerGeneratingProgress * 100));//,
+                                world.pointsManager.isGeneratingLayer, (int)(world.pointsManager.layerGeneratingProgress * 100),
+                                world.pointsManager.fixedLayerId);//,
                                 //geometriesCache.Count, drawingsCache.Count);
                     });
                 }
@@ -246,13 +247,7 @@ namespace Model
         {			
             renderWatch.Restart();
             DrawingGroup group = new DrawingGroup();
-            group.Transform = new MatrixTransform(m);
-
-            group.Children.Add(
-                new GeometryDrawing(
-                    Brushes.Black, null, new EllipseGeometry(new Point(0, 0), 20, 20)
-                    )
-                    );
+            group.Transform = new MatrixTransform(m);            
 
             foreach (PointSet set in setsToDraw)
             {
@@ -286,7 +281,7 @@ namespace Model
 
             foreach (Cluster c in world.pointsManager.clusters)
             {
-                if (c != null && c.idZ >= 0)// && c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
+                if (c != null && c.idZ == -1)// && c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
                 {
                     Geometry g = new RectangleGeometry(
                                 new Rect(
@@ -296,10 +291,16 @@ namespace Model
                     g.Freeze();
                     Color color = Colors.DarkGreen;
                     group.Children.Add(
-                        new GeometryDrawing(null, new Pen(new SolidColorBrush(color), c.idZ * 3 + 1), g)
+                        new GeometryDrawing(null, new Pen(new SolidColorBrush(color), c.idZ * 10 + 1), g)
                         );
                 }
             }
+
+            group.Children.Add(
+                new GeometryDrawing(
+                    Brushes.Black, null, new EllipseGeometry(new Point(0, 0), 20, 20)
+                    )
+                    );
 
             drawingContext.DrawDrawing(group);
 
