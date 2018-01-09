@@ -25,8 +25,8 @@ namespace BillionPointsManager
         public int li, ri, ti, bi, minLayerId;
 
         int clustersLeft, clustersRight, clustersTop, clustersBottom;
-        int layersCount = 60;
-        int deepScale = 2;
+        int layersCount = 100;
+        int deepScale = 10;
         public PointsManager(Pnt zeroPoint, double clusterSize)
         {            
             lowestPointSize = clusterSize / layersCount;
@@ -378,15 +378,18 @@ namespace BillionPointsManager
                     
                     int toX = Math.Min(idXlow + step, maxX);
                     int toY = Math.Min(idYlow + step, maxY);
-                    int lowStep = (int)Math.Pow(deepScale, previousLayerId);
+                    //int lowStep = (int)Math.Pow(deepScale, previousLayerId);
                     for (int addX = idXlow; addX <= toX; addX += 1)
                         for (int addY = idYlow; addY <= toY; addY += 1)
                         {
                             Cluster c = clusters[addX, addY, previousLayerId];
                             if (c == null)
                                 continue;
-                            foreach (ManagedPoint p in c.getAllPointsAsArray())
+                            //foreach (ManagedPoint p in c.getAllPointsAsArray())
+                            Parallel.ForEach(c.getAllPointsAsArray(), p =>
+                            {
                                 p.addCluster(newCluster);
+                            });
                         }
 
                     newClusters[idX, idY, newDeepnees] = newCluster;

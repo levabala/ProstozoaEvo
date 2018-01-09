@@ -59,7 +59,7 @@ namespace WPFRendererModel2
             worldElement.setWorldRenderer(worldRenderer);
             mainCanvas.Children.Add(worldElement);
 
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < 100; i++)
             {
                 worldController.addSource(SourceType.Fire, 700);
                 worldController.addSource(SourceType.Fertility, 100);
@@ -69,7 +69,7 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Fertility, 100);
             }
 
-            int count = 50000; //one million points! (no)
+            int count = 500000; //one million points! (no)
             mainProgressBar.Value = 0;
             new Task(() =>
             {        

@@ -30,7 +30,7 @@ namespace BillionPointsManager
             for (int i = 0; i < sets.Count; i++)
             {
                 PointSet set;
-                //lock (locker)
+                lock (locker)
                     set = sets[i];
                 if (set.type != pointType)
                     continue;
