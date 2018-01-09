@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointsManager
+namespace BillionPointsManager
 {
     public class StaticPoint : ManagedPoint
     {        
@@ -20,6 +20,14 @@ namespace PointsManager
             this.clusters = clusters;
             foreach (Cluster c in clusters)
                 c.addPoint(this);
+        }
+
+        public override void addCluster(Cluster c) {
+            Cluster[] newClusters = new Cluster[clusters.Length + 1];
+            clusters.CopyTo(newClusters, 0);
+            newClusters[newClusters.Length - 1] = c;
+            clusters = newClusters;
+            c.addPoint(this);
         }
     }
 }

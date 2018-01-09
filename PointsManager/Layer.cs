@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointsManager
+namespace BillionPointsManager
 {
     public class Layer
     {
@@ -23,13 +23,16 @@ namespace PointsManager
             object locker = container.GetLocker<PointType>();
 
             pointsCount++;
+            int pointType = point.type;
             double minDx, minDy, minDist;
             int minId = -1;
             minDist = minDx = minDy = joinDist;
             for (int i = 0; i < sets.Count; i++)
             {
-                PointSet set = sets[i];
-                if (set.type != point.type)
+                PointSet set;
+                lock (locker)
+                    set = sets[i];
+                if (set.type != pointType)
                     continue;
                 double dx = point.x - set.x;
                 double dy = point.y - set.y;
@@ -39,7 +42,8 @@ namespace PointsManager
                     minId = i;
                     minDist = dist;
                     minDx = dx;
-                    minDy = dy;                    
+                    minDy = dy;
+                    break;
                 }
             }
             if (minId != -1)

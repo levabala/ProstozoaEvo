@@ -1,4 +1,5 @@
-﻿using Model;
+﻿using BillionPointsManager;
+using Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -21,7 +22,7 @@ namespace WPFRendererModel2
         WorldRenderer renderer;
         Matrix matrix;          
         FrameworkElement container;
-        ColoredGeometry[] coloredGeometry = new ColoredGeometry[0];
+        PointSet[] setsToDraw = new PointSet[0];
         double foodWidth = 5;
         double viewedSize = 6;
         bool running = true;
@@ -83,7 +84,7 @@ namespace WPFRendererModel2
                     invMatrix.Invert();
                     Point leftTopView = invMatrix.Transform(new Point(0, 0));
                     Point rightBottomView = invMatrix.Transform(new Point(container.ActualWidth, container.ActualHeight));
-                    coloredGeometry = renderer.GetGeometries(leftTopView, rightBottomView, mainWindow);
+                    setsToDraw = renderer.GetSetsToDraw(leftTopView, rightBottomView, mainWindow);
                 }
             }).Start();            
 
@@ -151,8 +152,8 @@ namespace WPFRendererModel2
         {
             base.OnRender(drawingContext);
 
-			ColoredGeometry[] cg = coloredGeometry.ToArray();			
-			renderer.Render(drawingContext, cg, matrix);            
+            PointSet[] sets = setsToDraw.ToArray();			
+			renderer.Render(drawingContext, sets, matrix);            
         }
     }
 }

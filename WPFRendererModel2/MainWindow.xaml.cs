@@ -46,6 +46,13 @@ namespace WPFRendererModel2
                     case Key.OemMinus:
                         worldRenderer.maxPartiesRendered = (int)(worldRenderer.maxPartiesRendered / 1.5);
                         break;
+                    case Key.O:
+                        world.pointsManager.fixedLayerId++;
+                        break;
+                    case Key.L:
+                        if (world.pointsManager.fixedLayerId >= 0)
+                            world.pointsManager.fixedLayerId--;
+                        break;
                 }
             };
 
@@ -62,21 +69,22 @@ namespace WPFRendererModel2
                 worldController.addSource(SourceType.Fertility, 100);
             }
 
-            int count = 300000;
+            int count = 500000; //one million points! (no)
             mainProgressBar.Value = 0;
             new Task(() =>
             {        
                 while (world.food.Count < count)
                 {
                     lock (world.tickLocker)
-                        world.FoodTick(1000);
+                        world.FoodTick(100);
                     onUI(() => {
-                        mainProgressBar.Value = (double)world.food.Count / count;
-                        Title = world.food.Values.Count.ToString();
+                        mainProgressBar.Value = (double)world.food.Count / count;                        
                     });
                 }                
                 onUI(() => mainProgressBar.Value = 1);
-            }).Start();            
+            }).Start();
+
+            //worldController.Resume();
         }
 
         private void onUI(Action act)

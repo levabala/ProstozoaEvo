@@ -1,5 +1,5 @@
-﻿using MathAssembly;
-using PointsManager;
+﻿using BillionPointsManager;
+using MathAssembly;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,9 +18,9 @@ namespace Model
     {
         public World world;
 
-        Dictionary<Guid, uint> setsHashes = new Dictionary<Guid, uint>();
-        Dictionary<Guid, ColoredGeometry> geometriesCache = new Dictionary<Guid, ColoredGeometry>();
-        Dictionary<ColoredGeometry, GeometryDrawing> drawingsCache = new Dictionary<ColoredGeometry, GeometryDrawing>();
+        //Dictionary<Guid, uint> setsHashes = new Dictionary<Guid, uint>();
+        //Dictionary<Guid, ColoredGeometry> geometriesCache = new Dictionary<Guid, ColoredGeometry>();
+        //Dictionary<ColoredGeometry, GeometryDrawing> drawingsCache = new Dictionary<ColoredGeometry, GeometryDrawing>();
 
         public double foodScale = 3;
         public double foodMaxDensity = Math.Pow(3, 3);
@@ -70,7 +70,7 @@ namespace Model
         List<double> renderTimes = new List<double>();
 
         
-        public ColoredGeometry[] GetGeometries(Point leftTopView, Point rightBottomView, Window window)//, Matrix m)
+        public PointSet[] GetSetsToDraw(Point leftTopView, Point rightBottomView, Window window)//, Matrix m)
         {						            
             lock (world.tickLocker)
             {
@@ -86,24 +86,14 @@ namespace Model
                 int clustersDrawed = 0;
                 int totalElements = 0;
                 foreach (Cluster c in world.pointsManager.clusters)                
-                    if (c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
+                    if (c != null && c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
                     {
                         clustersDrawed++;
-                        totalElements += c.container.Values.Count;
-                        /*Geometry g = new RectangleGeometry(
-                                    new Rect(
-                                        new Point(c.x, c.y),
-                                        new Point(c.x + c.size, c.y + c.size))
-                                );
-                        g.Freeze();
-                        Color color = Colors.DarkGreen;
-                        ColoredGeometry cg = new ColoredGeometry(g, null, color);
-                        coloredGeometry.Add(cg);*/
+                        totalElements += c.container.Values.Count;                        
                     }
                 calcIterateClustersTimes.Add(calcOtherWatch.ElapsedMilliseconds);
 
-                calcOtherWatch.Restart();
-                ColoredGeometry[] coloredGeometry = new ColoredGeometry[setsToDraw.Length];
+                calcOtherWatch.Restart();                
                 int coloredGeometrySetLength = 0;
                 double foodGetTime = 0;
                 int foodGetCount = 0;
@@ -111,43 +101,39 @@ namespace Model
                 int geometriesCreated = 0;
                 int geometriesRestored = 0;
                 //Parallel.For(0, coloredGeometry.Length - 1, (i) =>                
-                for (int i = 0; i < coloredGeometry.Length; i++)
+                for (int i = 0; i < setsToDraw.Length; i++)
                 {
                     PointSet set = setsToDraw[i];                    
-
                     ColoredGeometry cg = new ColoredGeometry();
 
-                    uint oldHash, nowHash;
-                    setsHashes.TryGetValue(set.guid, out oldHash);
-                    nowHash = set.hash;
+                    Object val = set.linkedObjects[CacheLastHashGeometryType];
+                    uint oldHash = 0;
+                    if (val != null)
+                        oldHash = (uint)val;
+                    uint nowHash = set.hash;
                     if (oldHash == nowHash)
                     {
-                        bool exist = geometriesCache.TryGetValue(set.guid, out coloredGeometry[i]);
-                        if (exist)
+                        Object val2 = set.linkedObjects[CacheColoredGeometryType];                        
+                        if (val2 != null)
                         {
                             geometriesRestored++;
                             continue;
-                        }                        
+                        }                                                 
                     }
                     geometriesCreated++;
-                    setsHashes[set.guid] = nowHash;
+                    set.linkedObjects[CacheLastHashGeometryType] = nowHash;
 
                     switch (set.type)
                     {
                         case World.ZoaType:
                             break;
                         case World.FoodType:                            
-                            double size = (set.joinDist) / 2;
-                            /*if (size < foodScale)
-                                size = foodScale;*/
+                            double size = (set.joinDist * 2);
                             double alpha =
-                                (foodScale * foodScale * set.points.Count) / //total food area 
-                                (Math.PI * (set.joinDist / 2) * (set.joinDist / 2));
+                                (world.pointsManager.lowestPointSize * world.pointsManager.lowestPointSize * set.points.Count * 4) / //total food area 
+                                (Math.PI * size * size / 4);
                             if (alpha > 1)
-                                alpha = 1;
-                            if (alpha < 0.01)
-                                break;
-                                //return;
+                                alpha = 1;                            
                             coloredGeometrySetLength++;
 
                             double fire = 0;
@@ -155,34 +141,35 @@ namespace Model
                             double ocean = 0;
                             double toxicity = 0;
                             foreach (StaticPoint p in set.points)
-                            {                                
-                                Food f = world.food[p.id];
+                            {
+                                Food f = (Food)p.linkedObjects[World.WorldObjectType];//world.food[p.id];
                                 fire += f.fire;
                                 grass += f.grass;
                                 ocean += f.ocean;
                                 toxicity += f.toxicity;
                             }                            
                             toxicity /= set.points.Count;
-                            //FoodDraw fd = new FoodDraw(set.x, set.y, alpha, size, fire, grass, ocean);
-                            double sum = fire + grass + ocean;
-                            
-                            Geometry g = new RectangleGeometry(
+
+                            /*Geometry g = new RectangleGeometry(
                                     new Rect(
                                         new Point(set.x - size / 2, set.y - size / 2),
                                         new Point(set.x + size / 2, set.y + size / 2))
-                                );
-                            g.Freeze();                            
+                                );*/
+                            Geometry g = new EllipseGeometry(
+                                new Rect(set.x - size / 2, set.y - size / 2, size, size)                                    
+                            );
+                            g.Freeze();
 
+                            double sum = fire + grass + ocean;
                             Color c = Color.FromArgb(
                                         (byte)(alpha * 255),//coeff * 255),
                                         (byte)(fire / sum * 255),
                                         (byte)(grass / sum * 255),
                                         (byte)(ocean / sum * 255));
-                            cg = new ColoredGeometry(g, c, null);
-                            coloredGeometry[i] = cg;
+                            cg = new ColoredGeometry(g, c, null);                            
                             break;
                     }
-                    geometriesCache[set.guid] = cg;
+                    set.linkedObjects[CacheColoredGeometryType] = cg;
                 }//);
                 createGeometryTime /= coloredGeometrySetLength;
                 foodGetTime /= foodGetCount;
@@ -234,47 +221,87 @@ namespace Model
                     {
                         if (window.Title != null)
                             window.Title = String.Format(
-                                "ClustersDrawed: {0}/{1}, Elements(Rendered/MaxRendered/InViewedClusters/Total): {2}/{3}/{4}/{5} " + 
-								//"ElapsedTime: CalcSets/CalcClusters/CalcGeometry/CalcAll {6}/{7}/{8}/{9}ms" + 
-                                " Render {10}/Total {11}ms Geometries(Restored/Created): {12}/{13}" + 
-                                " CacheSize(CG/Drawings): {14}/{15}",
+                                "Clusters: {14}x{15}x{16} isGeneratingLayer: {17}|{18}%" + 
+                                " ClustersDrawed: {0}/{1}, Elements(Rendered/MaxRendered/InViewedClusters/Total): {2}/{3}/{4}/{5} " +
+                                //"ElapsedTime: CalcSets/CalcClusters/CalcGeometry/CalcAll {6}/{7}/{8}/{9}ms" + 
+                                " Render {10}/Total {11}ms Geometries(Restored/Created): {12}/{13} FixedLayer: {19}",
+                                //" CacheSize(CG/Drawings): {14}/{15}",
                                 clustersDrawed, world.pointsManager.clusters.Length,
-                                coloredGeometrySetLength, maxPartiesRendered, totalElements, world.pointsManager.pointsCount,
+                                setsToDraw.Length, maxPartiesRendered, totalElements, world.pointsManager.pointsCount,
                                 calcGetSetsTime, calcIterateClustersTime, calcGeometryTime,
                                 calcTime, renderTime, calcTime + renderTime,
                                 geometriesRestored, geometriesCreated,
-                                geometriesCache.Count, drawingsCache.Count);
+                                world.pointsManager.clusters.GetLength(0), world.pointsManager.clusters.GetLength(1), world.pointsManager.clusters.GetLength(2),
+                                world.pointsManager.isGeneratingLayer, (int)(world.pointsManager.layerGeneratingProgress * 100),
+                                world.pointsManager.fixedLayerId);//,
+                                //geometriesCache.Count, drawingsCache.Count);
                     });
                 }
                 catch (Exception e) { }
 
-				return coloredGeometry;
+				return setsToDraw;
             }            
         }
         
-        public void Render(DrawingContext drawingContext, ColoredGeometry[] coloredGeometry, Matrix m)
-        {
-			//Window mainWindow = Application.Current.Windows[0];
-
+        public void Render(DrawingContext drawingContext, PointSet[] setsToDraw, Matrix m)
+        {			
             renderWatch.Restart();
             DrawingGroup group = new DrawingGroup();
-            group.Transform = new MatrixTransform(m);
-            foreach (ColoredGeometry cg in coloredGeometry)
-                if (cg.set == 1)
+            group.Transform = new MatrixTransform(m);            
+
+            foreach (PointSet set in setsToDraw)
+            {
+                Object drawingObj = set.linkedObjects[CacheDrawingsType];
+                GeometryDrawing drawing;
+
+                Object val = set.linkedObjects[CacheLastHashDrawingType];
+                uint oldHash = 0;
+                if (val != null)
+                    oldHash = (uint)val;
+                uint nowHash = set.hash;
+
+                if (drawingObj != null && oldHash == nowHash)
+                    drawing = drawingObj as GeometryDrawing;
+                else
                 {
-                    GeometryDrawing drawing;
-                    drawingsCache.TryGetValue(cg, out drawing);
-                    if (drawing == null)
-                    {
-                        drawing = new GeometryDrawing(
-                                (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
-                                (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1),
-                                cg.g);
-                        drawingsCache[cg] = drawing;
-                    }
-                    group.Children.Add(drawing);
+                    ColoredGeometry cg = (ColoredGeometry)set.linkedObjects[CacheColoredGeometryType];
+                    drawing = new GeometryDrawing(
+                            (cg.brushColor == null) ? null : new SolidColorBrush((Color)cg.brushColor),
+                            (cg.penColor == null) ? null : new Pen(new SolidColorBrush((Color)cg.penColor), 1),
+                            cg.g);                    
+                    set.linkedObjects[CacheDrawingsType] = drawing;
                 }
-            group.Freeze();
+                set.linkedObjects[CacheLastHashDrawingType] = nowHash;
+
+                drawing.Freeze();                
+                group.Children.Add(drawing);                
+            }
+            //group.Freeze();
+
+
+            foreach (Cluster c in world.pointsManager.clusters)
+            {
+                if (c != null && c.idZ == -1)// && c.idX >= world.pointsManager.li && c.idX <= world.pointsManager.ri && c.idY >= world.pointsManager.ti && c.idY <= world.pointsManager.bi)
+                {
+                    Geometry g = new RectangleGeometry(
+                                new Rect(
+                                    new Point(c.x, c.y),
+                                    new Point(c.x + c.size, c.y + c.size))
+                            );
+                    g.Freeze();
+                    Color color = Colors.DarkGreen;
+                    group.Children.Add(
+                        new GeometryDrawing(null, new Pen(new SolidColorBrush(color), c.idZ * 10 + 1), g)
+                        );
+                }
+            }
+
+            group.Children.Add(
+                new GeometryDrawing(
+                    Brushes.Black, null, new EllipseGeometry(new Point(0, 0), 20, 20)
+                    )
+                    );
+
             drawingContext.DrawDrawing(group);
 
             lock (renderTimes)
@@ -284,6 +311,11 @@ namespace Model
                     renderTimes.RemoveAt(0);
             }
         }
+
+        public const int CacheColoredGeometryType = 10;
+        public const int CacheLastHashGeometryType = 11;
+        public const int CacheLastHashDrawingType = 12;
+        public const int CacheDrawingsType = 13;
 
         /*Stopwatch renderWatch = new Stopwatch();
         public void Render(DrawingContext drawingContext, Matrix matrix, Drawing[] drawings)
@@ -368,7 +400,7 @@ namespace Model
                 this.grass = grass / sum;
                 this.ocean = ocean / sum;
             }
-        }*/        
+        }*/
 
         private struct FoodDraw
         {

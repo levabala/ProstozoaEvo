@@ -6,49 +6,64 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointsManager
+namespace BillionPointsManager
 {
     public class PointsManager
     {
         public readonly Pnt ZERO;
         public readonly double clusterSize;
-        public int pointsCount = 0;        
+        public readonly double lowestPointSize = 0;
+        public bool isGeneratingLayer = false;
+        public double layerGeneratingProgress = 0;
+        public int pointsCount = 0;
+        public int fixedLayerId = -1;
         public DictionaryOfPointContainer pointsContainer = new DictionaryOfPointContainer();
-        public Cluster[,] clusters;
+        public Cluster[,,] clusters;
         public Cluster zeroCluster;
 
         //debug
         public int li, ri, ti, bi, minLayerId;
 
         int clustersLeft, clustersRight, clustersTop, clustersBottom;
-        int layersCount = 40;
-        int clustersStep = 10;
+        int layersCount = 100;
+        int deepScale = 10;
         public PointsManager(Pnt zeroPoint, double clusterSize)
-        {
-            clusters = new Cluster[1, 1];
-            zeroCluster = clusters[0, 0] = new Cluster(zeroPoint.x, zeroPoint.y, clusterSize, 0, 0, layersCount);
+        {            
+            lowestPointSize = clusterSize / layersCount;
+            clusters = new Cluster[1, 1, 1];
+            zeroCluster = clusters[0, 0, 0] = new Cluster(zeroPoint.x, zeroPoint.y, clusterSize, 0, 0, 0, layersCount);
             ZERO = zeroPoint;
             this.clusterSize = clusterSize;
             clustersLeft = clustersRight = clustersTop = clustersBottom = 0;
+
+            /*lock (fillLocker)
+            {
+                addClustersLayer(ref clusters, ref layerGeneratingProgress);
+                addClustersLayer(ref clusters, ref layerGeneratingProgress);
+            }*/
         }
 
-        public void addDinamicPoint(Pnt point, double interactRadius, long id, int type)
+        public void addDinamicPoint(Pnt point, double interactRadius, long id, int type, params KeyValuePair<Object, Object>[] linkedObjects)
         {
-            DinamicPoint p = new DinamicPoint(point.x, point.y, interactRadius, id, type);            
+            DinamicPoint p = new DinamicPoint(point.x, point.y, interactRadius, id, type);
+            foreach (KeyValuePair<Object, Object> pair in linkedObjects)
+                p.linkObject(pair.Key, pair.Value);
             updatePoint(p);
             pointsContainer.Get<DinamicPoint>()[id] = p;
             pointsCount++;
         }
-
-        public void addStaticPoint(Pnt point, long id, int type)
+        
+        public void addStaticPoint(Pnt point, long id, int type, params KeyValuePair<Object, Object>[] linkedObjects)
         {
             StaticPoint p = new StaticPoint(point.x, point.y, 0, id, type);
+            foreach (KeyValuePair<Object, Object> pair in linkedObjects)
+                p.linkObject(pair.Key, pair.Value);
             p.setClusters(getClusters(p));
             pointsContainer.Get<StaticPoint>()[id] = p;
             pointsCount++;
         }
 
-        public long[] getNeighbors<PointType>(long id) where PointType : ManagedPoint
+        public long[] getNeighborsIds<PointType>(long id) where PointType : ManagedPoint
         {
             PointType point = null;
             if (!pointsContainer.Get<PointType>().TryGetValue(id, out point))
@@ -61,14 +76,14 @@ namespace PointsManager
 
             return nearPoints.ToArray();            
         }
-
-        public StaticPoint[] getPoints(double lx, double rx, double ty, double by)
+        /*
+        public ManagedPoint[] getPoints(double lx, double rx, double ty, double by)
         {
             int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
             return getPointsByIdBorders(ids[0], ids[1], ids[2], ids[3]);
         }        
 
-        public StaticPoint[] getPointsByIdBorders(int li, int ri, int ti, int bi)
+        public ManagedPoint[] getPointsByIdBorders(int li, int ri, int ti, int bi)
         {            
             List<StaticPoint> output = new List<StaticPoint>();
             if (ri > clusters.GetLength(0) - 1)
@@ -79,85 +94,97 @@ namespace PointsManager
                 for (int idY = ti; idY <= bi; idY++)
                     output.AddRange(clusters[idX, idY].getAllPoints());
             return output.ToArray(); ;
-        }
+        }*/
 
         public PointSet[] getPointsSets(double lx, double rx, double ty, double by, int maxPointsCount)
         {
-            int[] ids = getClustersIdsByEdges(lx, rx, ty, by);
-            return getPointsSetsByIdBorders(ids[0], ids[1], ids[2], ids[3], maxPointsCount);
+            int[] ids = getClustersIdsByEdges(lx, rx, ty, by, maxPointsCount);
+            return getPointsSetsByIdBorders(ids[0], ids[1], ids[2], ids[3], ids[4], maxPointsCount);
         }
 
-        public PointSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int maxPointsCount)
+        public PointSet[] getPointsSetsByIdBorders(int li, int ri, int ti, int bi, int deepnees, int maxPointsCount)
         {
+            //return OneByOneGetterNotSync(li, ri, ti, bi, maxPointsCount);
+            //lock (fillLocker)            
+                return MinLayerOneLoopGetter(li, ri, ti, bi, deepnees, maxPointsCount);
+        }        
+
+        private PointSet[] OneByOneGetterNotSync(int li, int ri, int ti, int bi, int deepnees, int maxPointsCount)
+        {
+            int clustersLeft = (ri - li + 1) * (bi - ti + 1);
             List<PointSet> output = new List<PointSet>();
-            if (ri > clusters.GetLength(0) - 1)
-                ri = clusters.GetLength(0) - 1;
-            if (bi > clusters.GetLength(1) - 1)
-                bi = clusters.GetLength(1) - 1;
-            int totalClusters = (ri - li + 1) * (bi - ti + 1);
-            int clustersLeft = totalClusters;
+            int pointsLeft = maxPointsCount;
+            for (int idX = li; idX <= ri; idX++)
+                for (int idY = ti; idY <= bi; idY++)
+                {
+                    output.AddRange(clusters[idX, idY, deepnees].getPointSets<StaticPoint>(pointsLeft / clustersLeft));
+                    clustersLeft--;
+                    pointsLeft = maxPointsCount - output.Count;
+                }
+            return output.ToArray();
+        }
+
+        private PointSet[] MinLayerOneLoopGetter(int li, int ri, int ti, int bi, int deepnees, int maxPointsCount)
+        {
+            int clustersLeft = (ri - li + 1) * (bi - ti + 1);
             int minLayerId = 0;
-            int pointsCount = Int32.MaxValue;            
-
-            while(pointsCount > maxPointsCount && minLayerId < layersCount)
-            {
-                pointsCount = 0;
-                for (int idX = li; idX <= ri; idX++)
-                    for (int idY = ti; idY <= bi; idY++)
-                    {
-                        pointsCount += clusters[idX, idY].layers[minLayerId].setsCount;
-                        if (pointsCount > maxPointsCount)
-                        {                            
-                            //init exit
-                            idX = ri + 1;                            
-                            minLayerId++;
-                            break;
-                        }                            
-                    }
-            }
-            if (minLayerId >= layersCount)
-                minLayerId = layersCount - 1;
-
-            //one-loop method
-            /*for (int idX = li; idX <= ri; idX++)
+            for (int idX = li; idX <= ri; idX++)
                 for (int idY = ti; idY <= bi; idY++)
                 {
                     int pointsPerCluster = (maxPointsCount) / clustersLeft;
                     if (pointsPerCluster < 1)
                         pointsPerCluster = 1;
-                    minLayerId = Math.Max(minLayerId, clusters[idX, idY].getLayerId(pointsPerCluster));
-                    maxPointsCount -= clusters[idX, idY].layers[minLayerId].sets.Count;
+                    int got = clusters[idX, idY, deepnees].getLayerId<StaticPoint>(pointsPerCluster);
+                    int last = minLayerId;
+                    minLayerId = Math.Max(minLayerId, got);
+                    maxPointsCount -= clusters[idX, idY, deepnees].layers[minLayerId].setsCount;
                     clustersLeft--;
-                }*/
-
-            for (int idX = li; idX <= ri; idX++)
-                for (int idY = ti; idY <= bi; idY++)                                    
-                    output.AddRange(clusters[idX, idY].layers[minLayerId].getAllSets());
-            this.minLayerId = minLayerId;
-            return output.ToArray();
-
-            /*
-             * int pointsPerCluster = maxPointsCount;
-                    for (int idX2 = li; idX2 < idX; idX2++)
-                        for (int idY2 = ti; idY2 <= bi; idY2++)
-                            pointsPerCluster -= clusters[idX2, idY2].layers[minLayerId].sets.Count;                    
-                    for (int idY2 = ti; idY2 <= idY; idY2++)
-                        pointsPerCluster -= clusters[idX, idY2].layers[minLayerId].sets.Count;
-                    pointsPerCluster /= clustersLeft;
-
-                    if (pointsPerCluster < 1)
-                        pointsPerCluster = 1;
-                    minLayerId = Math.Max(minLayerId, clusters[idX, idY].getLayerId(pointsPerCluster));
-                    clustersLeft--;
-             */
+                }
+            return getAllAtLayer(li, ri, ti, bi, deepnees, minLayerId);
         }
 
-        private int[] getClustersIdsByEdges(double lx, double rx, double ty, double by)
+        private PointSet[] MinLayerGetter(int li, int ri, int ti, int bi, int deepnees, int maxPointsCount)
+        {            
+            int minLayerId = 0;
+            int pointsCount = Int32.MaxValue;
+            while (pointsCount > maxPointsCount && minLayerId < layersCount)
+            {
+                pointsCount = 0;
+                for (int idX = li; idX <= ri; idX++)
+                    for (int idY = ti; idY <= bi; idY++)
+                    {
+                        pointsCount += clusters[idX, idY, deepnees].layers[minLayerId].setsCount;
+                        if (pointsCount > maxPointsCount)
+                        {
+                            //init exit
+                            idX = ri + 1;
+                            minLayerId++;
+                            break;
+                        }
+                    }
+            }
+            if (minLayerId >= layersCount)
+                minLayerId = layersCount - 1;
+            this.minLayerId = minLayerId;
+
+            return getAllAtLayer(li, ri, ti, bi, deepnees, minLayerId);
+        }
+
+        private PointSet[] getAllAtLayer(int li, int ri, int ti, int bi, int deepnees, int layerId)
         {
-            int li = getClusterIdX(lx);
-            int ri = getClusterIdX(rx);
-            int ti = getClusterIdY(ty);
-            int bi = getClusterIdY(by);
+            List<PointSet> output = new List<PointSet>();
+            for (int idX = li; idX <= ri; idX++)
+                for (int idY = ti; idY <= bi; idY++)
+                    output.AddRange(clusters[idX, idY, deepnees].layers[layerId].getAllSets());            
+            return output.ToArray();
+        }
+
+        private int[] getClustersIdsByEdges(double lx, double rx, double ty, double by, int maxPointsCount)
+        {
+            int li = getClusterIdX(lx, 0);
+            int ri = getClusterIdX(rx, 0);
+            int ti = getClusterIdY(ty, 0);
+            int bi = getClusterIdY(by, 0);
             if (li < 0)
                 li = 0;
             if (ri < 0)
@@ -166,45 +193,115 @@ namespace PointsManager
                 ti = 0;
             if (bi < 0)
                 bi = 0;
+            if (ri > clusters.GetLength(0) - 1)
+                ri = clusters.GetLength(0) - 1;
+            if (bi > clusters.GetLength(1) - 1)
+                bi = clusters.GetLength(1) - 1;
+
+            int deepnees = 0;
+            if (fixedLayerId >= 0)
+            {
+                deepnees = fixedLayerId;
+                int step = (int)Math.Pow(deepScale, deepnees);
+                li = (int)Math.Ceiling((double)li / step);
+                ri = (int)Math.Ceiling((double)ri / step);
+                ti = (int)Math.Ceiling((double)ti / step);
+                bi = (int)Math.Ceiling((double)bi / step);                
+            }
+            else
+                while ((ri - li + 1) * (bi - ti + 1) > maxPointsCount)
+                {
+                    li /= deepScale;
+                    ri /= deepScale;
+                    ti /= deepScale;
+                    bi /= deepScale;
+                    deepnees++;
+                }
+
+            if (deepnees + 1 > clusters.GetLength(2))
+            {
+                deepnees = clusters.GetLength(2) - 1;
+                if (!isGeneratingLayer)
+                {
+                    new Task(() =>
+                    {
+                        Cluster[,,] newClusters;
+                        lock (fillLocker)
+                        {
+                            newClusters = clusters.Clone() as Cluster[,,];
+                            addClustersLayer(ref newClusters, ref layerGeneratingProgress);
+                            layerGeneratingProgress = 1;
+                            clusters = newClusters;
+                        }
+                    }).Start();
+                }
+            }
+
+            li = getClusterIdX(lx, deepnees);
+            ri = getClusterIdX(rx, deepnees);
+            ti = getClusterIdY(ty, deepnees);
+            bi = getClusterIdY(by, deepnees);
+            if (li < 0)
+                li = 0;
+            if (ri < 0)
+                ri = 0;
+            if (ti < 0)
+                ti = 0;
+            if (bi < 0)
+                bi = 0;
+            int xMax = (int)Math.Ceiling((clusters.GetLength(0) - 1) / Math.Pow(deepScale, deepnees));
+            int yMax = (int)Math.Ceiling((clusters.GetLength(1) - 1) / Math.Pow(deepScale, deepnees));
+            if (ri > xMax)
+                ri = xMax;
+            if (bi > yMax)
+                bi = yMax;
+
+            //<for debug>
             this.li = li;
             this.ri = ri;
             this.ti = ti;
             this.bi = bi;
-            return new int[] { li, ri, ti, bi };
+            //<for debug/>
+
+            return new int[] { li, ri, ti, bi, deepnees };
         }
 
         object fillLocker = new object();
-        private Cluster getCluster(double x, double y)
-        {
-            int idX = getClusterIdX(x);
-            int idY = getClusterIdY(y);
+        private Cluster getCluster(double x, double y, int deepnees)
+        {            
+            int idX = getClusterIdX(x, deepnees);
+            int idY = getClusterIdY(y, deepnees);
 
-            double clusterX = getClusterX(idX);
-            double clusterY = getClusterY(idY);
+            double clusterX = getClusterX(idX, deepnees);
+            double clusterY = getClusterY(idY, deepnees);
 
             bool needToFill = idX < 0 || idY < 0 || idX >= clusters.GetLength(0) || idY >= clusters.GetLength(1) || clusters.Length == 0;
             if (needToFill)
             {
-                lock (fillLocker)
-                {
-                    fillClustersTo(idX, idY);
-                    return getCluster(x, y);
-                }
+                //lock (fillLocker)
+                //{
+                    Cluster[,,] newClusters;
+                    newClusters = clusters.Clone() as Cluster[,,];
+
+                    fillClustersTo(ref newClusters, idX, idY);
+                    clusters = newClusters;
+                    return getCluster(x, y, deepnees);
+                //}
             }
-            return clusters[idX, idY];
+            return clusters[idX, idY, deepnees];
         }
 
-        private int getClusterIdX(double x)
+        private int getClusterIdX(double x, int deepnees)
+        {            
+            return (int)(x / (clusterSize * (int)Math.Pow(deepScale, deepnees))) + clustersLeft / (int)Math.Pow(deepScale, deepnees);
+        }
+
+        private int getClusterIdY(double y, int deepnees)
         {
-            return (int)Math.Floor(x / clusterSize) + clustersLeft;
+            return (int)(y / (clusterSize * (int)Math.Pow(deepScale, deepnees))) + clustersTop / (int)Math.Pow(deepScale, deepnees);
         }
 
-        private int getClusterIdY(double y)
-        {
-            return (int)Math.Floor(y / clusterSize) + clustersTop;
-        }
-
-        private void fillClustersTo(int idx, int idy)
+        private void fillClustersTo(ref Cluster[,,] clusters, int idx, int idy)
         {
             int addLeft = -idx;
             int addRight = idx - clusters.GetLength(0) + 1;
@@ -212,104 +309,214 @@ namespace PointsManager
             int addBottom = idy - clusters.GetLength(1) + 1;
             while (addLeft > 0)
             {
-                addClustersColumn(true);
+                addClustersColumn(ref clusters, true);
                 addLeft--;
             }
             while (addRight > 0)
             {
-                addClustersColumn(false);
+                addClustersColumn(ref clusters, false);
                 addRight--;
             }
             while (addTop > 0)
             {
-                addClustersRow(true);
+                addClustersRow(ref clusters, true);
                 addTop--;
             }
             while (addBottom > 0)
             {
-                addClustersRow(false);
+                addClustersRow(ref clusters, false);
                 addBottom--;
             }
         }
 
-        private void addClustersRow(bool before)
+        private void addClustersLayer(ref Cluster[,,] clusters, ref double progress)
         {
-            Cluster[,] newClusters = new Cluster[clusters.GetLength(0), clusters.GetLength(1) + 1];
+            isGeneratingLayer = true;
+            int newDeepnees = clusters.GetLength(2);            
+            Cluster[,,] newClusters = new Cluster[clusters.GetLength(0), clusters.GetLength(1), newDeepnees + 1];            
+
+            //clone
+            for (int idZ = 0; idZ < clusters.GetLength(2); idZ++)
+            {
+                int xMax = (int)Math.Ceiling((clusters.GetLength(0) - 1) / Math.Pow(deepScale, idZ));
+                for (int idX = 0; idX <= xMax; idX++)
+                {
+                    int yMax = (int)Math.Ceiling((clusters.GetLength(1) - 1) / Math.Pow(deepScale, idZ));
+                    for (int idY = 0; idY <= yMax; idY++)
+                        newClusters[idX, idY, idZ] = clusters[idX, idY, idZ];
+                }
+            }
+
+            //add layer (fuuuck.. -_-)        
+            int previousLayerId = clusters.GetLength(2) - 1;
+            int step = (int)Math.Pow(deepScale, newDeepnees);
+
+            int maxX = clusters.GetLength(0) - 1;
+            int maxY = clusters.GetLength(1) - 1;
+
+            int idXlowMax = clusters.GetLength(0) - 1;// / (int)Math.Pow(deepScale, newDeepnees);
+            int idYlowMax = clusters.GetLength(1) - 1;// / (int)Math.Pow(deepScale, newDeepnees);
+            idXlowMax = (int)Math.Ceiling((double)idXlowMax / step) * step;
+            idYlowMax = (int)Math.Ceiling((double)idYlowMax / step) * step;
+
+            int allWork = idYlowMax * idXlowMax / step / step;
+            double workDone = 0;
+
+            for (int idXlow = 0; idXlow <= idXlowMax; idXlow += step)
+                for (int idYlow = 0; idYlow <= idYlowMax; idYlow += step)
+                {
+                    int idX = idXlow / step;
+                    int idY = idYlow / step;                                                               
+
+                    Cluster newCluster =
+                        new Cluster(
+                            getClusterX(idX, newDeepnees),
+                            getClusterY(idY, newDeepnees),
+                            clusterSize * Math.Pow(deepScale, newDeepnees),
+                            idX, idY, newDeepnees, layersCount
+                        );
+                    
+                    int toX = Math.Min(idXlow + step, maxX);
+                    int toY = Math.Min(idYlow + step, maxY);
+                    //int lowStep = (int)Math.Pow(deepScale, previousLayerId);
+                    for (int addX = idXlow; addX <= toX; addX += 1)
+                        for (int addY = idYlow; addY <= toY; addY += 1)
+                        {
+                            Cluster c = clusters[addX, addY, previousLayerId];
+                            if (c == null)
+                                continue;
+                            //foreach (ManagedPoint p in c.getAllPointsAsArray())
+                            Parallel.ForEach(c.getAllPointsAsArray(), p =>
+                            {
+                                p.addCluster(newCluster);
+                            });
+                        }
+
+                    newClusters[idX, idY, newDeepnees] = newCluster;
+
+                    workDone++;
+                    progress = workDone / allWork;
+                }
+            clusters = newClusters;
+            isGeneratingLayer = false;
+        }
+
+        private void addClustersRow(ref Cluster[,,] clusters, bool before)
+        {
+            Cluster[,,] newClusters = new Cluster[clusters.GetLength(0), clusters.GetLength(1) + 1, clusters.GetLength(2)];            
             if (before)
             {
                 clustersTop++;
-                for (int x = 0; x < newClusters.GetLength(0); x++)
+                for (int z = 0; z < newClusters.GetLength(2); z++)
                 {
-                    newClusters[x, 0] = new Cluster(getClusterX(x), getClusterY(0), clusterSize, x, 0, layersCount);
-                    for (int y = 1; y < clusters.GetLength(1) + 1; y++)
+                    int step = (int)Math.Pow(deepScale, z);
+                    int xLimit = (int)Math.Ceiling((double)newClusters.GetLength(0) / step);
+                    for (int x = 0; x < xLimit; x++)
                     {
-                        newClusters[x, y] = clusters[x, y - 1];
-                        newClusters[x, y].idY = y;
-                        newClusters[x, y].idX = x;
+                        int yLimit = (int)Math.Ceiling((double)clusters.GetLength(1) / step) + 1;
+                        newClusters[x, 0, z] = new Cluster(getClusterX(x, z), getClusterY(0, z), clusterSize * Math.Pow(deepScale, z), x, 0, z, layersCount);
+                        for (int y = 1; y < yLimit; y++)
+                        {
+                            Cluster c = clusters[x, y - 1, z];
+                            c.idX = x;
+                            c.idY = y;
+                            c.x = getClusterX(x, z);
+                            c.y = getClusterY(y, z);
+                            newClusters[x, y, z] = c;                            
+                        }
                     }
                 }
             }
             else
             {
                 clustersBottom++;
-                for (int x = 0; x < newClusters.GetLength(0); x++)
+                for (int z = 0; z < newClusters.GetLength(2); z++)
                 {
-                    int maxY = newClusters.GetLength(1) - 1;
-                    newClusters[x, maxY] = new Cluster(getClusterX(x), getClusterY(maxY), clusterSize, x, maxY, layersCount);
-                    for (int y = 0; y < clusters.GetLength(1); y++)
+                    int step = (int)Math.Pow(deepScale, z);
+                    int xLimit = (int)Math.Ceiling((double)newClusters.GetLength(0) / step);
+                    for (int x = 0; x < xLimit; x++)
                     {
-                        newClusters[x, y] = clusters[x, y];
-                        newClusters[x, y].idY = y;
-                        newClusters[x, y].idX = x;
+                        int yMax = (int)Math.Ceiling((double)clusters.GetLength(1) / step);                        
+                        newClusters[x, yMax, z] = new Cluster(getClusterX(x, z), getClusterY(yMax, z), clusterSize * Math.Pow(deepScale, z), x, yMax, z, layersCount);
+                        for (int y = 0; y < yMax; y++)
+                        {
+                            Cluster c = clusters[x, y, z];
+                            c.idX = x;
+                            c.idY = y;
+                            c.x = getClusterX(x, z);
+                            c.y = getClusterY(y, z);
+                            newClusters[x, y, z] = c;
+                        }
                     }
                 }
             }
             clusters = newClusters;
         }
 
-        private void addClustersColumn(bool before)
+        private void addClustersColumn(ref Cluster[,,] clusters, bool before)
         {
-            Cluster[,] newClusters = new Cluster[clusters.GetLength(0) + 1, clusters.GetLength(1)];
+            Cluster[,,] newClusters = new Cluster[clusters.GetLength(0) + 1, clusters.GetLength(1), clusters.GetLength(2)];
             if (before)
             {
                 clustersLeft++;
-                for (int y = 0; y < newClusters.GetLength(1); y++)
+                for (int z = 0; z < newClusters.GetLength(2); z++)
                 {
-                    newClusters[0, y] = new Cluster(getClusterX(0), getClusterY(y), clusterSize, 0, y, layersCount);
-                    for (int x = 1; x < clusters.GetLength(0) + 1; x++)
+                    int step = (int)Math.Pow(deepScale, z);
+                    int yLimit = (int)Math.Ceiling((double)newClusters.GetLength(1) / step);
+                    for (int y = 0; y < yLimit; y++)
                     {
-                        newClusters[x, y] = clusters[x - 1, y];
-                        newClusters[x, y].idY = y;
-                        newClusters[x, y].idX = x;
+                        int xLimit = (int)Math.Ceiling((double)clusters.GetLength(0) / step) + 1;
+                        newClusters[0, y, z] = new Cluster(getClusterX(0, z), getClusterY(y, z), clusterSize * Math.Pow(deepScale, z), 0, y, z, layersCount);
+                        for (int x = 1; x < xLimit; x++)
+                        {
+                            Cluster c = clusters[x - 1, y, z];
+                            c.idX = x;
+                            c.idY = y;
+                            c.x = getClusterX(x, z);
+                            c.y = getClusterY(y, z);
+                            newClusters[x, y, z] = c;
+                        }
                     }
                 }
             }
             else
             {
                 clustersRight++;
-                for (int y = 0; y < newClusters.GetLength(1); y++)
+                for (int z = 0; z < newClusters.GetLength(2); z++)
                 {
-                    int maxX = newClusters.GetLength(0) - 1;
-                    newClusters[maxX, y] = new Cluster(getClusterX(maxX), getClusterY(y), clusterSize, maxX, y, layersCount);
-                    for (int x = 0; x < clusters.GetLength(0); x++)
+                    int step = (int)Math.Pow(deepScale, z);
+                    int yLimit = (int)Math.Ceiling((double)newClusters.GetLength(1) / step);
+                    for (int y = 0; y < yLimit; y++)
                     {
-                        newClusters[x, y] = clusters[x, y];
-                        newClusters[x, y].idY = y;
-                        newClusters[x, y].idX = x;
+                        int xMax = (int)Math.Ceiling((double)clusters.GetLength(0) / step);                        
+                        newClusters[xMax, y, z] = new Cluster(getClusterX(xMax, z), getClusterY(y, z), clusterSize * Math.Pow(deepScale, z), xMax, y, z, layersCount);
+                        for (int x = 0; x < xMax; x++)
+                        {
+                            Cluster c = clusters[x, y, z];
+                            c.idX = x;
+                            c.idY = y;
+                            c.x = getClusterX(x, z);
+                            c.y = getClusterY(y, z);
+                            newClusters[x, y, z] = c;
+                        }
                     }
                 }
             }
             clusters = newClusters;
         }        
         
-        private double getClusterX(int id)
+        private double getClusterX(int id, int deepnees)
         {
-            return clusterSize * (id - clustersLeft);
+            int size = (int)(clusterSize * Math.Pow(deepScale, deepnees));
+            int leftClusters = (int)Math.Ceiling(clustersLeft / Math.Pow(deepScale, deepnees));
+            return size * (id - leftClusters);
         }
 
-        private double getClusterY(int id)
+        private double getClusterY(int id, int deepnees)
         {
-            return clusterSize * (id - clustersTop);
+            int size = (int)(clusterSize * Math.Pow(deepScale, deepnees));
+            int leftClusters = (int)Math.Ceiling(clustersTop / Math.Pow(deepScale, deepnees));
+            return size * (id - leftClusters);
         }
 
         public void updatePoint(Pnt point, double interactRadius, int id)
@@ -320,24 +527,50 @@ namespace PointsManager
 
         private Cluster[] getClusters(double lpx, double x, double rpx, double tpy, double y, double bpy)
         {
-            return new Cluster[]
+            List<Cluster> output = new List<Cluster>();
+            for (int z = 0; z < clusters.GetLength(2); z++)
             {
-                getCluster(lpx, y),
-                getCluster(rpx, y),
-                getCluster(x, tpy),
-                getCluster(x, bpy)
-            };
+                lock (fillLocker)
+                {
+                    Cluster cl1 = getCluster(lpx, y, z);
+                    Cluster cl2 = getCluster(rpx, y, z);
+                    Cluster cl3 = getCluster(x, tpy, z);
+                    Cluster cl4 = getCluster(x, bpy, z);
+                    if (cl1 != null)
+                        output.Add(cl1);
+                    if (cl2 != null)
+                        output.Add(cl2);
+                    if (cl3 != null)
+                        output.Add(cl3);
+                    if (cl4 != null)
+                        output.Add(cl4);
+                }
+            }
+            return output.ToArray(); //Distinct()?
         }
 
         private Cluster[] getClusters(ManagedPoint point)
         {
-            return new Cluster[]
+            List<Cluster> output = new List<Cluster>();
+            for (int z = 0; z < clusters.GetLength(2); z++)
             {
-                getCluster(point.lpx, point.y),
-                getCluster(point.rpx, point.y),
-                getCluster(point.x, point.tpy),
-                getCluster(point.x, point.bpy)
-            };
+                lock (fillLocker)
+                {
+                    Cluster cl1 = getCluster(point.lpx, point.y, z);
+                    Cluster cl2 = getCluster(point.rpx, point.y, z);
+                    Cluster cl3 = getCluster(point.x, point.tpy, z);
+                    Cluster cl4 = getCluster(point.x, point.bpy, z);
+                    if (cl1 != null)
+                        output.Add(cl1);
+                    if (cl2 != null)
+                        output.Add(cl2);
+                    if (cl3 != null)
+                        output.Add(cl3);
+                    if (cl4 != null)
+                        output.Add(cl4);
+                }
+            }
+            return output.ToArray(); //Distinct()?
         }
 
         private void updatePoint(DinamicPoint point)

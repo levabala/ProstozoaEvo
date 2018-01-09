@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointsManager
+namespace BillionPointsManager
 {
     public class DinamicPoint : ManagedPoint
     {
@@ -68,6 +68,15 @@ namespace PointsManager
                     newClusters[i].addPoint(this);
                 }
             clusters = newClusters;
+        }
+
+        public override void addCluster(Cluster c)
+        {
+            Cluster[] newClusters = new Cluster[clusters.Length + 1];
+            clusters.CopyTo(newClusters, 0);
+            newClusters[newClusters.Length - 1] = c;
+            clusters = newClusters;
+            c.addPoint(this);
         }
     }
 }

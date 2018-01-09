@@ -1,28 +1,30 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PointsManager
+namespace BillionPointsManager
 {
     public class Cluster
     {
         public DictionaryOfPointContainer container = new DictionaryOfPointContainer();
         public int pointsCount = 0;
         public Layer[] layers;
-        public int idX, idY;
+        public int idX, idY, idZ;
         public double x, y, size;
-        public Cluster(double x, double y, double size, int idX, int idY, int layersCount)
+        public Cluster(double x, double y, double size, int idX, int idY, int idZ, int layersCount)
         {
             this.x = x;
             this.y = y;
             this.idX = idX;
             this.idY = idY;
+            this.idZ = idZ;
             this.size = size;
             layers = new Layer[layersCount];
-            double joinStep = size / layersCount;            
+            double joinStep = size / (layersCount);            
             for (int i = 0; i < layers.Length; i++)
                 layers[i] = new Layer(i, joinStep * (i + 1));
         }
@@ -35,24 +37,24 @@ namespace PointsManager
 
         public void addPoint<PointType>(PointType point) where PointType : ManagedPoint
         {
-            Dictionary<long, PointType> dictionary = container.Get<PointType>();
-            if (!dictionary.ContainsKey(point.id))
+            ConcurrentDictionary<long, PointType> dictionary = container.Get<PointType>();
+            if (dictionary.TryAdd(point.id, point))
             {
                 foreach (Layer layer in layers)
                     layer.addPoint(point);
-                dictionary[point.id] = point;
+                //dictionary[point.id] = point;
                 pointsCount++;
             }
         }
 
-        /*
-        public int getLayerId(int maxPointsCount)
+        
+        public int getLayerId<PointType>(int maxCount) where PointType : ManagedPoint
         {
-            for (int i = 0; i < layers.Length; i++)
-                if (layers[i].dinamicSets.Count + layers[i].staticSets.Count <= maxPointsCount)
-                    return i;
+            for (int i = 0; i < layers.Length; i++)            
+                if (layers[i].container.Get<PointType>().Count <= maxCount)
+                    return i;            
             return layers.Length - 1;
-        }*/
+        }
 
         //TODO
         public void removePoint(long id)
@@ -71,17 +73,17 @@ namespace PointsManager
             return layers.Last().container.Get<PointType>().ToArray();
         }
 
-        public StaticPoint[] getAllPointsAsArray()
+        public ManagedPoint[] getAllPointsAsArray()
         {
             int size = 0;
-            foreach (List<StaticPoint> list in container.Values)
-                size += list.Count;
-            StaticPoint[] pnts = new StaticPoint[size];
+            foreach (IDictionary dict in container.Values)
+                size += dict.Count;
+            ManagedPoint[] pnts = new ManagedPoint[size];
             int index = 0;
-            foreach (List<StaticPoint> list in container.Values)
+            foreach (IDictionary dict in container.Values)
             {
-                list.CopyTo(pnts, index);
-                index += list.Count;
+                dict.Values.CopyTo(pnts, index);
+                index += dict.Count;
             }
             return pnts;
         }

@@ -99,6 +99,10 @@
       <Project>{796614bb-6cb8-4abb-ae34-84220bc22fe5}</Project>
       <Name>Model</Name>
     </ProjectReference>
+    <ProjectReference Include="..\PointsManager\BillionPointsManager.csproj">
+      <Project>{269F815B-7DCA-4BCE-A6BF-55D9F3D97A09}</Project>
+      <Name>BillionPointsManager</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
